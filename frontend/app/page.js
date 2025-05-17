@@ -47,6 +47,12 @@ const SIPPage = () => {
         console.log("Call answered.");
         setCallStatus("Connected");
         setIncomingCall(false);
+      },
+      onRegistered: () => {
+        console.log("Registered");
+      },
+      onUnregistered: () => {
+        console.log("Unregistered");
       }
     };
 
@@ -90,7 +96,7 @@ const SIPPage = () => {
     <div className="p-4 space-y-4">
       <h1 className="text-2xl font-bold">SIP.js Multi-User Call</h1>
       <div className="space-x-2">
-        <button onClick={() => registerUser("sip:1002@161.35.57.104", "1002", "1234")} 
+        <button onClick={() => registerUser("sip:1002@161.35.57.104", "1002", "123456")} 
                 className="bg-blue-500 text-white px-4 py-2 rounded">
           Register as 1002
       </button>

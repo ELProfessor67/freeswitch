@@ -42,12 +42,24 @@ export const loginController = catchAsyncError(async (req, res, next) => {
     
 });
 
-
 export const loadController = catchAsyncError(async (req, res, next) => {
 
-    res.status(201).json({
+    res.status(200).json({
         success: true,
         user: req.user
     });
     
+});
+
+export const logoutController = catchAsyncError(async (req, res, next) => {
+    const options = {
+        httpOnly: true,    // Prevent access to the cookie from JavaScript
+        expires: new Date(Date.now()), // Set expiration time
+        secure: process.env.NODE_ENV === 'production' ? true : false  // Only send cookies over HTTPS in production
+    };
+
+    res.status(200).cookie("token", null, options).json({
+        success: true,
+        message: "Logout Successfully"
+    }); 
 });

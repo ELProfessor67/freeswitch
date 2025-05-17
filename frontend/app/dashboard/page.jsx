@@ -152,21 +152,30 @@ import {
   ChevronLeft,
   Settings,
   ArrowRight,
+  DoorOpen,
 } from "lucide-react"
 import { useUser } from '@/providers/UserProvider'
-import React, { useEffect,useState,useRef } from 'react'
+import React, { useEffect, useState, useRef } from 'react'
 import { Web } from "sip.js";
+import { CallCounter } from "@/components/CallCounterComponent";
+import { logoutRequest } from "@/http/authHttp";
+import { useRouter } from "next/navigation";
 
-export default function VoipInterface() {
+
+const server = "ws://freeswitch.myrealmarket.com:5066";
+
+export default function Page() {
   const [activeTab, setActiveTab] = useState("contacts")
   const [activeFilter, setActiveFilter] = useState("all")
-  const { user } = useUser();
+  const { user, setUser, setIsAuth } = useUser();
   const audioRef = useRef(null);
   const userRef = useRef(null);
   const [registeredUser, setRegisteredUser] = useState(null);
-  const [callStatus, setCallStatus] = useState("Idle");
   const [incomingCall, setIncomingCall] = useState(false);
-  const [dialnumber,setDialnumber] = useState();
+
+  // idle , ringing, process, incoming
+  const [callStatus, setCallStatus] = useState("idle");
+  const router = useRouter()
 
   const registerUser = async (aor, username, password) => {
     const options = {
@@ -187,17 +196,17 @@ export default function VoipInterface() {
     simpleUser.delegate = {
       onCallReceived: async () => {
         console.log("Incoming call received...");
-        setCallStatus("Incoming Call...");
+        setCallStatus('incoming')
         setIncomingCall(true);
       },
       onCallHangup: () => {
         console.log("Call ended.");
-        setCallStatus("Idle");
+        setCallStatus("idle");
         setIncomingCall(false);
       },
       onCallAnswered: () => {
         console.log("Call answered.");
-        setCallStatus("Connected");
+        setCallStatus("process");
         setIncomingCall(false);
       },
       onRegistered: () => {
@@ -222,8 +231,8 @@ export default function VoipInterface() {
 
   const handleCall = async (number) => {
     if (userRef.current) {
-      setCallStatus("Ringing...");
       await userRef.current.call(`sip:${number}@161.35.57.104`);
+      ringing("ringing")
     } else {
       console.log("Register a user before making a call.");
     }
@@ -233,6 +242,7 @@ export default function VoipInterface() {
     if (userRef.current && incomingCall) {
       await userRef.current.answer();
       setCallStatus("Connected");
+      setCallStatus('process')
       setIncomingCall(false);
     }
   };
@@ -240,7 +250,7 @@ export default function VoipInterface() {
   const handleHangUp = async () => {
     if (userRef.current) {
       await userRef.current.hangup();
-      setCallStatus("Idle");
+      setCallStatus("idle");
     }
   };
 
@@ -249,29 +259,60 @@ export default function VoipInterface() {
       registerUser(user.SIP, user.username, user.password)
     }
   }, [user]);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    try {
+      const formdata = new FormData(e.target);
+      const number = formdata.get("number");
+      handleCall(number)
+    } catch (error) {
+      console.log("Error: ", error.message)
+    }
+  }
+
+
+  const handleLogout = async () => {
+    try {
+      const res = await logoutRequest();
+      setIsAuth(false);
+      setUser(null);
+      router.push("/")
+    } catch (error) {
+      alert(error.message)
+    }
+  }
+
+
   return (
     <div className="flex h-screen w-full bg-white">
       {/* Left sidebar */}
       <div className="w-60 border-r border-gray-200 flex flex-col">
         {/* Top bar with IP and settings */}
         <div className="flex items-center justify-between px-4 py-2 border-b border-gray-200 bg-gray-50">
-          {user?.username && 
-          <span className="text-sm text-gray-600">{user?.username}@157.245.141.163</span>
+          {user?.username &&
+            <span className="text-sm text-gray-600">{user?.username}@157.245.141.163</span>
           }
           <Settings className="w-5 h-5 text-gray-500" />
+          <button className="bg-none border-none" onClick={handleLogout}>
+            <DoorOpen/>
+          </button>
         </div>
 
         {/* Search bar */}
         <div className="p-2 border-b border-gray-200">
-          <div className="relative">
+          <form className="relative" onSubmit={handleSubmit}>
             <Search className="absolute left-2 top-2.5 w-4 h-4 text-gray-400" />
             <input
               type="text"
+              name="number"
               placeholder="Find a contact..."
               className="w-full pl-8 pr-2 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-gray-400"
             />
-            <Grid className="absolute right-2 top-2.5 w-4 h-4 text-gray-400" />
-          </div>
+            <button className="bg-none border-none" type="submit">
+              <Grid className="absolute right-2 top-2.5 w-4 h-4 text-gray-400" />
+            </button>
+          </form>
         </div>
 
         {/* Calls section */}
@@ -279,15 +320,19 @@ export default function VoipInterface() {
           <div className="px-4 py-2 font-medium text-gray-700">Calls</div>
 
           {/* Contact item */}
-          <div className="flex items-center px-4 py-2 hover:bg-gray-100 cursor-pointer">
-            <div className="w-8 h-8 bg-gray-300 rounded-full flex-shrink-0"></div>
-            <div className="ml-3 flex-1">
-              <div className="text-sm font-medium">5000</div>
-              <div className="text-xs text-gray-500">1001@157.245.141.163</div>
-              <div className="text-xs text-gray-500">00:01</div>
+          {
+            incomingCall &&
+            <div className="flex items-center px-4 py-2 hover:bg-gray-100 cursor-pointer">
+              <div className="w-8 h-8 bg-gray-300 rounded-full flex-shrink-0"></div>
+              <div className="ml-3 flex-1">
+                <div className="text-sm font-medium">5000</div>
+                <div className="text-xs text-gray-500">1001@157.245.141.163</div>
+                <div className="text-xs text-gray-500">00:01</div>
+              </div>
+              <button onClick={handleAnswer} className="bg-green-100 text-green-800 text-xs px-2 py-0.5 rounded">Pick UP</button>
             </div>
-            <div className="bg-green-100 text-green-800 text-xs px-2 py-0.5 rounded">Calling</div>
-          </div>
+          }
+
 
           {/* Tab navigation */}
           <div className="flex border-t border-b border-gray-200 mt-2">
@@ -336,7 +381,7 @@ export default function VoipInterface() {
             <div className="relative">
               <div className="w-16 h-16 bg-orange-100 rounded-full"></div>
               <div className="absolute -right-4 -top-4 transform rotate-45">
-                <ArrowRight/>
+                <ArrowRight />
               </div>
             </div>
           </div>
@@ -363,79 +408,95 @@ export default function VoipInterface() {
       </div>
 
       {/* Main content area */}
-      <div className="flex-1 flex flex-col bg-black">
-        {/* Top toolbar */}
-        <div className="flex justify-center py-2 border-b border-gray-700">
-          <div className="flex space-x-2">
-            <button className="flex flex-col items-center justify-center px-4 py-1 text-white">
-              <VolumeX className="w-5 h-5 mb-1" />
-              <span className="text-xs">Mute</span>
+      {
+        (callStatus == "idle" || callStatus == "incoming") &&
+        <div className="flex-1 flex flex-col bg-black">
+          <h1>No Call</h1>
+        </div>
+      }
+
+      {
+        (callStatus != "idle" && callStatus != "incoming") &&
+        <div className="flex-1 flex flex-col bg-black">
+          {/* Top toolbar */}
+          <div className="flex justify-center py-2 border-b border-gray-700">
+            <div className="flex space-x-2">
+              <button className="flex flex-col items-center justify-center px-4 py-1 text-white">
+                <VolumeX className="w-5 h-5 mb-1" />
+                <span className="text-xs">Mute</span>
+              </button>
+              <button className="flex flex-col items-center justify-center px-4 py-1 text-white">
+                <Volume2 className="w-5 h-5 mb-1" />
+                <span className="text-xs">Speaker</span>
+              </button>
+              <button className="flex flex-col items-center justify-center px-4 py-1 text-white">
+                <Grid3x3 className="w-5 h-5 mb-1" />
+                <span className="text-xs">Keypad</span>
+              </button>
+              <button className="flex flex-col items-center justify-center px-4 py-1 text-white">
+                <BarChart2 className="w-5 h-5 mb-1" />
+                <span className="text-xs">Statistics</span>
+              </button>
+              <button className="flex flex-col items-center justify-center px-4 py-1 text-white">
+                <Circle className="w-5 h-5 mb-1" />
+                <span className="text-xs">Record</span>
+              </button>
+              <button className="flex flex-col items-center justify-center px-4 py-1 text-white">
+                <Video className="w-5 h-5 mb-1" />
+                <span className="text-xs">Video</span>
+              </button>
+              <button className="flex flex-col items-center justify-center px-4 py-1 text-white">
+                <Pause className="w-5 h-5 mb-1" />
+                <span className="text-xs">Hold</span>
+              </button>
+              <button className="flex flex-col items-center justify-center px-4 py-1 text-white">
+                <ArrowRightLeft className="w-5 h-5 mb-1" />
+                <span className="text-xs">Transfer</span>
+              </button>
+              <button className="flex flex-col items-center justify-center px-4 py-1 text-white">
+                <Plus className="w-5 h-5 mb-1" />
+                <span className="text-xs">Add call</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Call content */}
+          <div className="flex-1 flex flex-col items-center justify-center">
+            <div className="text-3xl text-white mb-8">{callStatus}</div>
+
+            {/* Avatar */}
+            <div className="w-32 h-32 bg-gray-300 rounded-full mb-4"></div>
+
+            {/* Contact info */}
+            <div className="text-center">
+              <div className="text-xl text-white">5000</div>
+              <div className="text-sm text-white">5000</div>
+              <div className="text-sm text-white">1001@157.245.141.163</div>
+              {
+                callStatus != "ringing" &&
+                <div className="text-sm text-green-500"><CallCounter/></div>
+              }
+            </div>
+          </div>
+
+          {/* Bottom actions */}
+          <div className="flex justify-center pb-8">
+            <button onClick={handleHangUp} className="w-16 h-16 bg-red-600 rounded-full flex items-center justify-center">
+              <Phone className="w-8 h-8 text-white transform rotate-135" />
             </button>
-            <button className="flex flex-col items-center justify-center px-4 py-1 text-white">
-              <Volume2 className="w-5 h-5 mb-1" />
-              <span className="text-xs">Speaker</span>
-            </button>
-            <button className="flex flex-col items-center justify-center px-4 py-1 text-white">
-              <Grid3x3 className="w-5 h-5 mb-1" />
-              <span className="text-xs">Keypad</span>
-            </button>
-            <button className="flex flex-col items-center justify-center px-4 py-1 text-white">
-              <BarChart2 className="w-5 h-5 mb-1" />
-              <span className="text-xs">Statistics</span>
-            </button>
-            <button className="flex flex-col items-center justify-center px-4 py-1 text-white">
-              <Circle className="w-5 h-5 mb-1" />
-              <span className="text-xs">Record</span>
-            </button>
-            <button className="flex flex-col items-center justify-center px-4 py-1 text-white">
-              <Video className="w-5 h-5 mb-1" />
-              <span className="text-xs">Video</span>
-            </button>
-            <button className="flex flex-col items-center justify-center px-4 py-1 text-white">
-              <Pause className="w-5 h-5 mb-1" />
-              <span className="text-xs">Hold</span>
-            </button>
-            <button className="flex flex-col items-center justify-center px-4 py-1 text-white">
-              <ArrowRightLeft className="w-5 h-5 mb-1" />
-              <span className="text-xs">Transfer</span>
-            </button>
-            <button className="flex flex-col items-center justify-center px-4 py-1 text-white">
-              <Plus className="w-5 h-5 mb-1" />
-              <span className="text-xs">Add call</span>
+          </div>
+
+          {/* Chat button */}
+          <div className="absolute bottom-4 left-4">
+            <button className="w-10 h-10 bg-gray-700 rounded-full flex items-center justify-center">
+              <MessageSquare className="w-5 h-5 text-white" />
             </button>
           </div>
         </div>
+      }
 
-        {/* Call content */}
-        <div className="flex-1 flex flex-col items-center justify-center">
-          <div className="text-3xl text-white mb-8">Calling</div>
 
-          {/* Avatar */}
-          <div className="w-32 h-32 bg-gray-300 rounded-full mb-4"></div>
-
-          {/* Contact info */}
-          <div className="text-center">
-            <div className="text-xl text-white">5000</div>
-            <div className="text-sm text-white">5000</div>
-            <div className="text-sm text-white">1001@157.245.141.163</div>
-            <div className="text-sm text-green-500">00:01</div>
-          </div>
-        </div>
-
-        {/* Bottom actions */}
-        <div className="flex justify-center pb-8">
-          <button className="w-16 h-16 bg-red-600 rounded-full flex items-center justify-center">
-            <Phone className="w-8 h-8 text-white transform rotate-135" />
-          </button>
-        </div>
-
-        {/* Chat button */}
-        <div className="absolute bottom-4 left-4">
-          <button className="w-10 h-10 bg-gray-700 rounded-full flex items-center justify-center">
-            <MessageSquare className="w-5 h-5 text-white" />
-          </button>
-        </div>
-      </div>
+      <audio ref={audioRef}></audio>
     </div>
   )
 }

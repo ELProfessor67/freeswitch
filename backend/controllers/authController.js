@@ -31,7 +31,8 @@ export const loginController = catchAsyncError(async (req, res, next) => {
     const options = {
         httpOnly: true,    // Prevent access to the cookie from JavaScript
         expires: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000), // Set expiration time
-        secure: process.env.NODE_ENV === 'production' ? true : false  // Only send cookies over HTTPS in production
+        secure: process.env.NODE_ENV === 'production' ? true : false,  // Only send cookies over HTTPS in production,
+        sameSite: 'none'
     };
 
     res.status(201).cookie("token", jwttoken, options).json({
@@ -55,7 +56,8 @@ export const logoutController = catchAsyncError(async (req, res, next) => {
     const options = {
         httpOnly: true,    // Prevent access to the cookie from JavaScript
         expires: new Date(Date.now()), // Set expiration time
-        secure: process.env.NODE_ENV === 'production' ? true : false  // Only send cookies over HTTPS in production
+        secure: process.env.NODE_ENV === 'production' ? true : false,  // Only send cookies over HTTPS in production
+        sameSite: 'none'
     };
 
     res.status(200).cookie("token", null, options).json({

@@ -5,7 +5,7 @@ import { Web } from "sip.js";
 
 export const registerRequest = async (aor,username,password) => {
     return new Promise(async (resolve, reject) => {
-        const server = process.env.NEXT_PUBLIC_FREESWITCH_WEBSOCKER_SERVER;
+        const server = "wss://freeswitch.myrealmarket.com:7443";
         const options = {
             aor,
             userAgentOptions: {

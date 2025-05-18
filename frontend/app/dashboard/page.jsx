@@ -162,7 +162,7 @@ import { logoutRequest } from "@/http/authHttp";
 import { useRouter } from "next/navigation";
 
 
-const server = "ws://freeswitch.myrealmarket.com:5066";
+const server = "wss://freeswitch.myrealmarket.com:7443";
 
 export default function Page() {
   const [activeTab, setActiveTab] = useState("contacts")

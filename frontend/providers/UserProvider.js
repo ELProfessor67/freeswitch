@@ -2,7 +2,7 @@
 import { loadRequest } from "@/http/authHttp";
 import { registerRequest } from "@/services/SIPService";
 import {createContext, useContext, useEffect, useState} from "react";
-import {useRouter} from "next/navigation";
+import {usePathname, useRouter} from "next/navigation";
 
 const UserContext = createContext();
 
@@ -12,6 +12,7 @@ export const UserProvier = ({children}) => {
     const [user, setUser] = useState(null);
     const [isAuth, setIsAuth] = useState(undefined);
     const router = useRouter();
+    const pathname = usePathname();
 
     const fetchUser = async () => {
         try {
@@ -20,7 +21,9 @@ export const UserProvier = ({children}) => {
             setUser(user);
             setIsAuth(true);
             await registerRequest(user.SIP, user.username, user.password);
-            router.push("/dashboard")
+            if(pathname == "/"){
+                router.push("/dashboard")
+            }
         } catch (error) {
             setIsAuth(false);
             setUser(null);

@@ -1,137 +1,3 @@
-// 'use client'
-// import { useUser } from '@/providers/UserProvider'
-// import React, { useEffect, useState,useRef } from 'react'
-// import { Web } from "sip.js";
-
-// const server = "ws://freeswitch.myrealmarket.com:5066";
-// const page = () => {
-//   const { user } = useUser();
-//   const audioRef = useRef(null);
-//   const userRef = useRef(null);
-//   const [registeredUser, setRegisteredUser] = useState(null);
-//   const [callStatus, setCallStatus] = useState("Idle");
-//   const [incomingCall, setIncomingCall] = useState(false);
-//   const [dialnumber,setDialnumber] = useState();
-
-//   const registerUser = async (aor, username, password) => {
-//     const options = {
-//       aor,
-//       media: {
-//         remote: {
-//           audio: audioRef.current
-//         }
-//       },
-//       userAgentOptions: {
-//         authorizationPassword: password,
-//         authorizationUsername: username,
-//       }
-//     };
-
-//     const simpleUser = new Web.SimpleUser(server, options);
-
-//     simpleUser.delegate = {
-//       onCallReceived: async () => {
-//         console.log("Incoming call received...");
-//         setCallStatus("Incoming Call...");
-//         setIncomingCall(true);
-//       },
-//       onCallHangup: () => {
-//         console.log("Call ended.");
-//         setCallStatus("Idle");
-//         setIncomingCall(false);
-//       },
-//       onCallAnswered: () => {
-//         console.log("Call answered.");
-//         setCallStatus("Connected");
-//         setIncomingCall(false);
-//       },
-//       onRegistered: () => {
-//         console.log("Registered");
-//       },
-//       onUnregistered: () => {
-//         console.log("Unregistered");
-//       }
-//     };
-
-//     try {
-//       await simpleUser.connect();
-//       await simpleUser.register();
-//       userRef.current = simpleUser;
-//       setRegisteredUser(username);
-//       console.log(username, 'is connected and registered', simpleUser.id);
-//     } catch (error) {
-//       console.error("Registration Failed", error);
-//       alert("Registration Failed. Check console for details.");
-//     }
-//   };
-
-//   const handleCall = async (number) => {
-//     if (userRef.current) {
-//       setCallStatus("Ringing...");
-//       await userRef.current.call(`sip:${number}@161.35.57.104`);
-//     } else {
-//       console.log("Register a user before making a call.");
-//     }
-//   };
-
-//   const handleAnswer = async () => {
-//     if (userRef.current && incomingCall) {
-//       await userRef.current.answer();
-//       setCallStatus("Connected");
-//       setIncomingCall(false);
-//     }
-//   };
-
-//   const handleHangUp = async () => {
-//     if (userRef.current) {
-//       await userRef.current.hangup();
-//       setCallStatus("Idle");
-//     }
-//   };
-
-//   useEffect(() => {
-//     if (user) {
-//       registerUser(user.SIP, user.username, user.password)
-//     }
-//   }, [user]);
-//   return (
-//     <div>
-//       <h1>Login as {user?.username}</h1>
-//       {incomingCall && (
-//         <div className="mt-4">
-//           <button onClick={handleAnswer}
-//             className="bg-green-600 text-white px-4 py-2 rounded">
-//             Answer Call
-//           </button>
-//         </div>
-//       )}
-//       <div className="mt-4">
-//         <h2 className="text-xl">Call Status: {callStatus}</h2>
-//       </div>
-//       <button onClick={handleHangUp}
-//         className="bg-red-500 text-white px-4 py-2 rounded">
-//         Hang Up
-//       </button>
-
-//       <input placeholder='Enter Number' value={dialnumber} onChange={(e) => setDialnumber(e.target.value)}/>
-//       <button onClick={() => handleCall(dialnumber)} 
-//                   className="bg-purple-500 text-white px-4 py-2 rounded">
-//             Call
-//           </button>
-//       <audio ref={audioRef} controls className="mt-4"></audio>
-//     </div>
-
-//   )
-// }
-
-// export default page
-
-
-
-
-
-
-
 "use client"
 import {
   Search,
@@ -153,6 +19,8 @@ import {
   Settings,
   ArrowRight,
   DoorOpen,
+  Play,
+  Volume,
 } from "lucide-react"
 import { useUser } from '@/providers/UserProvider'
 import React, { useEffect, useState, useRef } from 'react'
@@ -172,9 +40,17 @@ export default function Page() {
   const userRef = useRef(null);
   const [registeredUser, setRegisteredUser] = useState(null);
   const [incomingCall, setIncomingCall] = useState(false);
+  const [callInfo,setCallInfo] = useState({
+    host: "",
+    port:"",
+    schema: "",
+    user: ""
+  });
 
   // idle , ringing, process, incoming
   const [callStatus, setCallStatus] = useState("idle");
+  const [isMute,setIsMute] = useState(false);
+  const [isOnHold,setIsOnHold] = useState(false);
   const router = useRouter()
 
   const registerUser = async (aor, username, password) => {
@@ -195,7 +71,10 @@ export default function Page() {
 
     simpleUser.delegate = {
       onCallReceived: async () => {
+        const caller = simpleUser._invitation;
+
         console.log("Incoming call received...");
+        setCallInfo(simpleUser.session.remoteIdentity.uri.normal)
         setCallStatus('incoming')
         setIncomingCall(true);
       },
@@ -203,6 +82,8 @@ export default function Page() {
         console.log("Call ended.");
         setCallStatus("idle");
         setIncomingCall(false);
+        setCallInfo
+        setCallInfo({})
       },
       onCallAnswered: () => {
         console.log("Call answered.");
@@ -232,7 +113,14 @@ export default function Page() {
   const handleCall = async (number) => {
     if (userRef.current) {
       await userRef.current.call(`sip:${number}@161.35.57.104`);
-      ringing("ringing")
+      setCallStatus("ringing")
+      setCallInfo
+      setCallInfo({
+        host: "161.35.57.104",
+        user: number,
+        schema: "sip",
+        port: undefined
+      });
     } else {
       console.log("Register a user before making a call.");
     }
@@ -251,8 +139,37 @@ export default function Page() {
     if (userRef.current) {
       await userRef.current.hangup();
       setCallStatus("idle");
+      setCallInfo({});
     }
   };
+
+  const handleMuteAndUnmute = async () => {
+    if(isMute){
+      setIsMute(false);
+      if (userRef.current) {
+        await userRef.current.unmute();
+      }
+    }else{
+      setIsMute(true);
+      if (userRef.current) {
+        await userRef.current.mute();
+      }
+    }
+  }
+
+  const handleHoldAndUnHold = async () => {
+    if(isOnHold){
+      setIsOnHold(false);
+      if (userRef.current) {
+        await userRef.current.unhold();
+      }
+    }else{
+      setIsOnHold(true);
+      if (userRef.current) {
+        await userRef.current.hold();
+      }
+    }
+  }
 
   useEffect(() => {
     if (user) {
@@ -282,7 +199,6 @@ export default function Page() {
       alert(error.message)
     }
   }
-
 
   return (
     <div className="flex h-screen w-full bg-white">
@@ -325,9 +241,8 @@ export default function Page() {
             <div className="flex items-center px-4 py-2 hover:bg-gray-100 cursor-pointer">
               <div className="w-8 h-8 bg-gray-300 rounded-full flex-shrink-0"></div>
               <div className="ml-3 flex-1">
-                <div className="text-sm font-medium">5000</div>
-                <div className="text-xs text-gray-500">1001@157.245.141.163</div>
-                <div className="text-xs text-gray-500">00:01</div>
+                <div className="text-sm font-medium">{callInfo?.user}</div>
+                <div className="text-xs text-gray-500">{callInfo?.user}@{callInfo?.host}{callInfo?.port}</div>
               </div>
               <button onClick={handleAnswer} className="bg-green-100 text-green-800 text-xs px-2 py-0.5 rounded">Pick UP</button>
             </div>
@@ -421,9 +336,10 @@ export default function Page() {
           {/* Top toolbar */}
           <div className="flex justify-center py-2 border-b border-gray-700">
             <div className="flex space-x-2">
-              <button className="flex flex-col items-center justify-center px-4 py-1 text-white">
-                <VolumeX className="w-5 h-5 mb-1" />
-                <span className="text-xs">Mute</span>
+              <button className="flex flex-col items-center justify-center px-4 py-1 text-white" onClick={handleMuteAndUnmute}>
+                
+                {isMute ? <Volume className="w-5 h-5 mb-1" />: <VolumeX className="w-5 h-5 mb-1" />}
+                <span className="text-xs">{isMute ? "Unmute": "Mute"}</span>
               </button>
               <button className="flex flex-col items-center justify-center px-4 py-1 text-white">
                 <Volume2 className="w-5 h-5 mb-1" />
@@ -445,9 +361,10 @@ export default function Page() {
                 <Video className="w-5 h-5 mb-1" />
                 <span className="text-xs">Video</span>
               </button>
-              <button className="flex flex-col items-center justify-center px-4 py-1 text-white">
-                <Pause className="w-5 h-5 mb-1" />
-                <span className="text-xs">Hold</span>
+              <button className="flex flex-col items-center justify-center px-4 py-1 text-white" onClick={handleHoldAndUnHold}>
+               
+                {isOnHold ?  <Play className="w-5 h-5 mb-1" /> :  <Pause className="w-5 h-5 mb-1" />}
+                <span className="text-xs">{isOnHold ? "Unhold" : "Hold"}</span>
               </button>
               <button className="flex flex-col items-center justify-center px-4 py-1 text-white">
                 <ArrowRightLeft className="w-5 h-5 mb-1" />
@@ -469,9 +386,8 @@ export default function Page() {
 
             {/* Contact info */}
             <div className="text-center">
-              <div className="text-xl text-white">5000</div>
-              <div className="text-sm text-white">5000</div>
-              <div className="text-sm text-white">1001@157.245.141.163</div>
+              <div className="text-xl text-white">{callInfo?.user}</div>
+              <div className="text-sm text-white">{callInfo?.user}@{callInfo?.host}{callInfo?.port}</div>
               {
                 callStatus != "ringing" &&
                 <div className="text-sm text-green-500"><CallCounter/></div>

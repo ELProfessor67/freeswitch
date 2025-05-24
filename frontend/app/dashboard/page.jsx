@@ -21,6 +21,8 @@ import {
   DoorOpen,
   Play,
   Volume,
+  PhoneCallIcon,
+  DeleteIcon,
 } from "lucide-react"
 import { useUser } from '@/providers/UserProvider'
 import React, { useEffect, useState, useRef } from 'react'
@@ -46,6 +48,7 @@ export default function Page() {
     schema: "",
     user: ""
   });
+  const [number,setNumber] = useState('')
 
   // idle , ringing, process, incoming
   const [callStatus, setCallStatus] = useState("idle");
@@ -66,7 +69,7 @@ export default function Page() {
         authorizationUsername: username,
       }
     };
-
+ 
     const simpleUser = new Web.SimpleUser(server, options);
 
     simpleUser.delegate = {
@@ -325,8 +328,24 @@ export default function Page() {
       {/* Main content area */}
       {
         (callStatus == "idle" || callStatus == "incoming") &&
-        <div className="flex-1 flex flex-col bg-black">
-          <h1>No Call</h1>
+        <div className="flex-1 flex flex-col bg-black relative">
+          <div className="h-full w-full flex flex-col p-8 justify-end">
+            <input className="bg-none border-none text-2xl mb-5 text-white" value={number} onChange={(e) => setNumber(e.target.value)}/>
+            <div className="grid grid-cols-3 h-[50%] gap-4">
+              <button className="text-white bg-orange-400 flex items-center justify-center rounded-md cursor-pointer" onClick={() => setNumber(prev => `${prev}${1}`)}>1</button>
+              <button className="text-white bg-orange-400 flex items-center justify-center rounded-md cursor-pointer" onClick={() => setNumber(prev => `${prev}${2}`)}>2</button>
+              <button className="text-white bg-orange-400 flex items-center justify-center rounded-md cursor-pointer" onClick={() => setNumber(prev => `${prev}${3}`)}>3</button>
+              <button className="text-white bg-orange-400 flex items-center justify-center rounded-md cursor-pointer" onClick={() => setNumber(prev => `${prev}${4}`)}>4</button>
+              <button className="text-white bg-orange-400 flex items-center justify-center rounded-md cursor-pointer" onClick={() => setNumber(prev => `${prev}${5}`)}>5</button>
+              <button className="text-white bg-orange-400 flex items-center justify-center rounded-md cursor-pointer" onClick={() => setNumber(prev => `${prev}${6}`)}>6</button>
+              <button className="text-white bg-orange-400 flex items-center justify-center rounded-md cursor-pointer" onClick={() => setNumber(prev => `${prev}${7}`)}>7</button>
+              <button className="text-white bg-orange-400 flex items-center justify-center rounded-md cursor-pointer" onClick={() => setNumber(prev => `${prev}${8}`)}>8</button>
+              <button className="text-white bg-orange-400 flex items-center justify-center rounded-md cursor-pointer" onClick={() => setNumber(prev => `${prev}${9}`)}>9</button>
+              <button className="text-white bg-orange-400 flex items-center justify-center rounded-md cursor-pointer" onClick={() => handleCall(number)}><PhoneCallIcon/></button>
+              <button className="text-white bg-orange-400 flex items-center justify-center rounded-md cursor-pointer" onClick={() => setNumber(prev => `${prev}${0}`)}>0</button>
+              <button className="text-white bg-orange-400 flex items-center justify-center rounded-md cursor-pointer" onClick={() => setNumber(prev => prev.slice(0,prev.length-1))}><DeleteIcon/></button>
+            </div>
+          </div>
         </div>
       }
 

@@ -8,6 +8,7 @@ const SIP_DIR = process.env.NODE_ENV === "development" ? path.join(__dirname, "/
 
 export const reloadXml = () => {
     return new Promise((resolve, reject) => {
+        if(process.env.NODE_ENV == "development") return resolve()
         exec(`fs_cli -x "reloadxml"`, (error, stdout, stderr) => {
           if (error) {
             reject(error);
@@ -22,7 +23,7 @@ export const reloadXml = () => {
       });
 }
 export const isUserExists = async (username) => {
-    const userFile = path.join(SIP_DIR, `${username}.xml`);
+    const userFile = path.join(SIP_DIR, `${username}.xml`);    
     return fs.existsSync(userFile);
 }
 
@@ -32,7 +33,7 @@ export const createUser = async (username, password) => {
         <include>
             <user id="${username}">
                 <params>
-                <param name="password" value="$${password}"/>
+                <param name="password" value="${password}"/>
                 <param name="vm-password" value="${username}"/>
                 </params>
                 <variables>
@@ -79,7 +80,7 @@ export const getUsers = async () => {
     usersFiles.forEach(file => {
         const xmlData = fs.readFileSync(path.join(SIP_DIR, file), "utf8");
         const username = file.replace('.xml', '');
-        const passwordMatch = xmlData.match(/<param name="password" value="\$\${([^"]+)}"/);
+        const passwordMatch = xmlData.match(/<param\s+name="password"\s+value="([^"]+)"/);
         const password = passwordMatch ? passwordMatch[1] : null;
         users.push({ username, password });
 

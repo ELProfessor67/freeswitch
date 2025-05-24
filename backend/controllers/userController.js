@@ -8,14 +8,14 @@ export const createUser = catchAsyncError(async (req, res, next) => {
     const { username, password, SIP } = req.body;
     
     // Check if user already exists in database
-    const existingUser = isUserExists(username);
-
+    const existingUser = await isUserExists(username);
+   
     if (existingUser) {
         return next(new ErrorHandler('User already exists', 400));
     }
 
     
-    await createSIPUser(username, password);
+   const user = await createSIPUser(username, password);
 
     res.status(201).json({
         success: true,

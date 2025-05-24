@@ -23,47 +23,36 @@ import { Switch } from '@/components/ui/switch';
 
 const UserForm = ({ user, open, onOpenChange, onSubmit }) => {
   const { toast } = useToast();
-  const [name, setName] = useState(user?.name || '');
-  const [email, setEmail] = useState(user?.email || '');
-  const [role, setRole] = useState(user?.role || 'user');
-  const [sipId, setSipId] = useState(user?.sipId || '');
-  const [isActive, setIsActive] = useState(user?.status === 'active' || true);
+  const [username, setUsername] = useState(user?.username || '');
+  const [password, setPassword] = useState(user?.password || '');
 
   useEffect(() => {
     if (user) {
-      setName(user.name);
-      setEmail(user.email);
-      setRole(user.role);
-      setSipId(user.sipId || '');
-      setIsActive(user.status === 'active');
+      setUsername(user.username);
+      setPassword(user.password);
     } else {
-      setName('');
-      setEmail('');
-      setRole('user');
-      setSipId('');
-      setIsActive(true);
+      setUsername('');
+      setPassword('');;
     }
   }, [user, open]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
 
-    if (!name.trim() || !email.trim()) {
+    if (!username.trim() || !password.trim()) {
       toast({
         title: "Error",
-        description: "Name and email are required fields.",
+        description: "Username and password are required fields.",
         variant: "destructive",
       });
       return;
     }
 
     const userData = {
-      id: user?.id,
-      name,
-      email,
-      role,
-      sipId: sipId || undefined,
-      status: isActive ? 'active' : 'inactive',
+      username,
+      password,
+      update: !!user,
+      username1: user?.username
     };
 
     onSubmit(userData);
@@ -72,86 +61,45 @@ const UserForm = ({ user, open, onOpenChange, onSubmit }) => {
     toast({
       title: user ? "User Updated" : "User Created",
       description: user
-        ? `${name}'s information has been updated.`
-        : `${name} has been added successfully.`,
+        ? `${username}'s information has been updated.`
+        : `${username} has been added successfully.`,
     });
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:max-w-[500px] bg-white">
         <DialogHeader>
           <DialogTitle>{user ? 'Edit User' : 'Create New User'}</DialogTitle>
-          <DialogDescription>
-            {user
-              ? 'Update user information and SIP configuration.'
-              : 'Fill in the details to add a new user to the system.'}
-          </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-6 py-4">
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="name">Full Name</Label>
+              <Label htmlFor="username">Username</Label>
               <Input
-                id="name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="Enter full name"
+                id="username"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                placeholder="Enter Username"
                 required
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="email">Email Address</Label>
+              <Label htmlFor="password">Password</Label>
               <Input
-                id="email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="user@example.com"
+                id="password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="*********"
                 required
               />
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="role">User Role</Label>
-              <Select value={role} onValueChange={setRole}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select role" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="admin">Administrator</SelectItem>
-                  <SelectItem value="manager">Manager</SelectItem>
-                  <SelectItem value="agent">Call Agent</SelectItem>
-                  <SelectItem value="user">Regular User</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="sip">SIP ID (Optional)</Label>
-              <Input
-                id="sip"
-                value={sipId}
-                onChange={(e) => setSipId(e.target.value)}
-                placeholder="SIP identification"
-              />
-            </div>
-          </div>
-
-          <div className="flex items-center space-x-2">
-            <Switch
-              checked={isActive}
-              onCheckedChange={(checked) => setIsActive(checked)}
-              id="active-status"
-            />
-            <Label htmlFor="active-status">
-              User is {isActive ? 'active' : 'inactive'}
-            </Label>
-          </div>
+ 
 
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>

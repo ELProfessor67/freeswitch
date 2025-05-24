@@ -56,34 +56,17 @@ const UserTable = ({ users, onEdit, onDelete }) => {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Name</TableHead>
-              <TableHead>Email</TableHead>
-              <TableHead>Role</TableHead>
-              <TableHead>SIP ID</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Date Added</TableHead>
-              <TableHead>Actions</TableHead>
+              <TableHead>#</TableHead>
+              <TableHead>Username</TableHead>
+              <TableHead>Password</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {currentUsers.map((user) => (
-              <TableRow key={user.id}>
-                <TableCell className="font-medium">{user.name}</TableCell>
-                <TableCell>{user.email}</TableCell>
-                <TableCell>{user.role}</TableCell>
-                <TableCell>{user.sipId || 'N/A'}</TableCell>
-                <TableCell>
-                  <span
-                    className={`px-2 py-1 rounded-full text-xs ${
-                      user.status === 'active'
-                        ? 'bg-green-100 text-green-800'
-                        : 'bg-red-100 text-red-800'
-                    }`}
-                  >
-                    {user.status}
-                  </span>
-                </TableCell>
-                <TableCell>{new Date(user.createdAt).toLocaleDateString()}</TableCell>
+            {currentUsers.map((user,index) => (
+              <TableRow key={user.username}>
+                <TableCell className="font-medium">{index+1}</TableCell>
+                <TableCell>{user.username}</TableCell>
+                <TableCell>{user.password}</TableCell>
                 <TableCell className="flex gap-2">
                   <Button
                     variant="ghost"

@@ -22,7 +22,11 @@ export const UserProvier = ({children}) => {
             setIsAuth(true);
             await registerRequest(user.SIP, user.username, user.password);
             if(pathname == "/"){
-                router.push("/dashboard")
+                if(user.role == "ADMIN"){
+                    router.push("/admin")
+                }else{
+                    router.push("/dashboard")
+                }
             }
         } catch (error) {
             setIsAuth(false);

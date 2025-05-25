@@ -3,13 +3,17 @@ import { loginRequest } from '@/http/authHttp';
 import { useUser } from '@/providers/UserProvider';
 import { registerRequest } from '@/services/SIPService';
 import { useRouter } from 'next/navigation';
-import React from 'react';
+import React, { useState } from 'react';
 
 const Page = () => {
+  const [loading,setLoading] = useState(false);
   const {user,isAuth,setIsAuth,setUser} = useUser();
-  const router = useRouter()
+  const router = useRouter();
+
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setLoading(true);
     try {
       const formdata = new FormData(e.target);
 
@@ -23,10 +27,16 @@ const Page = () => {
       const res = await loginRequest(formdata);
       setIsAuth(true);
       setUser(res.data.user);
-      router.push("/dashboard");
+      if(res.data.user?.role == "ADMIN"){
+        router.push("/admin");
+      }else{
+        router.push("/dashboard");
+      }
     } catch (error) {
       alert(error.message)
       console.error(error);
+    }finally{
+      setLoading(false);
     }
   };
 
@@ -63,9 +73,9 @@ const Page = () => {
 
         <button
           type="submit"
-          className="w-full bg-blue-600 text-white py-3 rounded hover:bg-blue-700 transition-colors"
+          className="w-full bg-orange-500 text-white py-3 rounded hover:bg-orange-600 transition-colors"
         >
-          Submit
+          {loading ? "Loading....": "Submit"}
         </button>
       </form>
     </div>

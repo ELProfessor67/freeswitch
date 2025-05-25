@@ -15,7 +15,8 @@ const Page = () => {
 
       const username = formdata.get("username");
       const password = formdata.get("password");
-      const SIP = formdata.get("SIP");
+      const SIP = `sip:${username}@161.35.57.104`;
+      formdata.append("SIP",SIP);
 
       await registerRequest(SIP,username,password);
 
@@ -30,6 +31,7 @@ const Page = () => {
   };
 
   return (
+
     <div className="flex items-center justify-center min-h-screen bg-gray-100">
       <form 
         onSubmit={handleSubmit}
@@ -52,12 +54,12 @@ const Page = () => {
           className="w-full p-3 mb-4 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-400"
         />
 
-        <input
+        {/* <input
           name="SIP"
           required
           placeholder="SIP"
           className="w-full p-3 mb-6 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-400"
-        />
+        /> */}
 
         <button
           type="submit"

@@ -23,6 +23,7 @@ import {
   Volume,
   PhoneCallIcon,
   DeleteIcon,
+  MicOff,
 } from "lucide-react"
 import { useUser } from '@/providers/UserProvider'
 import React, { useEffect, useState, useRef } from 'react'
@@ -30,6 +31,7 @@ import { Web } from "sip.js";
 import { CallCounter } from "@/components/CallCounterComponent";
 import { logoutRequest } from "@/http/authHttp";
 import { useRouter } from "next/navigation";
+import DTMFKeyboard from "@/components/DTMFKeyboard";
 
 
 const server = "wss://freeswitch.myrealmarket.com:7443";
@@ -54,6 +56,8 @@ export default function Page() {
   const [callStatus, setCallStatus] = useState("idle");
   const [isMute,setIsMute] = useState(false);
   const [isOnHold,setIsOnHold] = useState(false);
+  const [isKeybordOpen,setIsKeyBoardOpen] = useState(false);
+  const [dtmf,setdtmf] = useState('');
   const router = useRouter()
 
   const registerUser = async (aor, username, password) => {
@@ -74,8 +78,6 @@ export default function Page() {
 
     simpleUser.delegate = {
       onCallReceived: async () => {
-        const caller = simpleUser._invitation;
-
         console.log("Incoming call received...");
         setCallInfo(simpleUser.session.remoteIdentity.uri.normal)
         setCallStatus('incoming')
@@ -84,6 +86,7 @@ export default function Page() {
       onCallHangup: () => {
         console.log("Call ended.");
         setCallStatus("idle");
+        setdtmf('')
         setIncomingCall(false);
         setCallInfo
         setCallInfo({})
@@ -98,6 +101,9 @@ export default function Page() {
       },
       onUnregistered: () => {
         console.log("Unregistered");
+      },
+      onRefer: (referral) => {
+        console.log(referral,"referral")
       }
     };
 
@@ -143,6 +149,7 @@ export default function Page() {
       await userRef.current.hangup();
       setCallStatus("idle");
       setCallInfo({});
+      setdtmf('')
     }
   };
 
@@ -203,10 +210,21 @@ export default function Page() {
     }
   }
 
+
+  const handleSendDTMF = async (num) => {
+    setdtmf(prev => `${prev}${num}`)
+    await userRef.current.sendDTMF(num);
+  }
+
+  const handleTransfer = async () => {
+    console.log(userRef.current.session.state)
+    await userRef.current.session?.refer("sip:1006@161.35.57.104",{});
+  }
+
   return (
     <div className="flex h-screen w-full bg-white">
       {/* Left sidebar */}
-      <div className="w-60 border-r border-gray-200 flex flex-col">
+      <div className="w-80 border-r border-gray-200 flex flex-col">
         {/* Top bar with IP and settings */}
         <div className="flex items-center justify-between px-4 py-2 border-b border-gray-200 bg-gray-50">
           {user?.username &&
@@ -236,7 +254,7 @@ export default function Page() {
 
         {/* Calls section */}
         <div className="flex-1 overflow-auto">
-          <div className="px-4 py-2 font-medium text-gray-700">Calls</div>
+          <div className="px-4 py-2 font-medium text-gray-700">Incoming Call</div>
 
           {/* Contact item */}
           {
@@ -269,7 +287,7 @@ export default function Page() {
           </div>
 
           {/* Filters */}
-          <div className="flex border-b border-gray-200">
+          {/* <div className="flex border-b border-gray-200">
             <button
               className={`flex-1 py-2 text-center text-sm ${activeFilter === "all" ? "text-orange-500 border-b-2 border-orange-500" : "text-gray-500"}`}
               onClick={() => setActiveFilter("all")}
@@ -291,17 +309,11 @@ export default function Page() {
             <button className="w-10 flex items-center justify-center text-gray-500">
               <Plus className="w-4 h-4" />
             </button>
-          </div>
+          </div> */}
 
           {/* Add contact hint */}
-          <div className="flex flex-col items-center justify-center p-6 text-center">
+          <div className="flex flex-col items-center justify-center p-6 text-center flex-1">
             <div className="text-sm text-gray-600 mb-1">Click here to add a new contact</div>
-            <div className="relative">
-              <div className="w-16 h-16 bg-orange-100 rounded-full"></div>
-              <div className="absolute -right-4 -top-4 transform rotate-45">
-                <ArrowRight />
-              </div>
-            </div>
           </div>
         </div>
 
@@ -330,7 +342,7 @@ export default function Page() {
         (callStatus == "idle" || callStatus == "incoming") &&
         <div className="flex-1 flex flex-col bg-black relative">
           <div className="h-full w-full flex flex-col p-8 justify-end">
-            <input className="bg-none border-none text-2xl mb-5 text-white" value={number} onChange={(e) => setNumber(e.target.value)}/>
+            <input className="bg-none border-none text-2xl mb-5 text-white outline-none" value={number} onChange={(e) => setNumber(e.target.value)}/>
             <div className="grid grid-cols-3 h-[50%] gap-4">
               <button className="text-white bg-orange-400 flex items-center justify-center rounded-md cursor-pointer" onClick={() => setNumber(prev => `${prev}${1}`)}>1</button>
               <button className="text-white bg-orange-400 flex items-center justify-center rounded-md cursor-pointer" onClick={() => setNumber(prev => `${prev}${2}`)}>2</button>
@@ -355,44 +367,44 @@ export default function Page() {
           {/* Top toolbar */}
           <div className="flex justify-center py-2 border-b border-gray-700">
             <div className="flex space-x-2">
-              <button className="flex flex-col items-center justify-center px-4 py-1 text-white" onClick={handleMuteAndUnmute}>
+              <button className={`flex flex-col items-center justify-center px-4 py-1 ${isMute ? "text-red-500" : "text-white"} cursor-pointer`} onClick={handleMuteAndUnmute}>
                 
-                {isMute ? <Volume className="w-5 h-5 mb-1" />: <VolumeX className="w-5 h-5 mb-1" />}
-                <span className="text-xs">{isMute ? "Unmute": "Mute"}</span>
+                <MicOff className="w-5 h-5 mb-1" />
+                <span className="text-xs">Mute</span>
               </button>
-              <button className="flex flex-col items-center justify-center px-4 py-1 text-white">
+              <button className={`flex flex-col items-center justify-center px-4 py-1 ${isOnHold ? "text-red-500" : "text-white"} cursor-pointer`} onClick={handleHoldAndUnHold}>
+                <Pause className="w-5 h-5 mb-1" />
+                <span className="text-xs">Hold</span>
+              </button>
+              {/* <button className={`flex flex-col items-center justify-center px-4 py-1 text-white cursor-pointer`}>
                 <Volume2 className="w-5 h-5 mb-1" />
                 <span className="text-xs">Speaker</span>
-              </button>
-              <button className="flex flex-col items-center justify-center px-4 py-1 text-white">
+              </button> */}
+              <button className={`flex flex-col items-center justify-center px-4 py-1 text-white cursor-pointer`} onClick={() => setIsKeyBoardOpen(true)}>
                 <Grid3x3 className="w-5 h-5 mb-1" />
                 <span className="text-xs">Keypad</span>
               </button>
-              <button className="flex flex-col items-center justify-center px-4 py-1 text-white">
+              <button className={`flex flex-col items-center justify-center px-4 py-1 text-white cursor-pointer`}>
                 <BarChart2 className="w-5 h-5 mb-1" />
                 <span className="text-xs">Statistics</span>
               </button>
-              <button className="flex flex-col items-center justify-center px-4 py-1 text-white">
+              <button className={`flex flex-col items-center justify-center px-4 py-1 text-white cursor-pointer`}>
                 <Circle className="w-5 h-5 mb-1" />
                 <span className="text-xs">Record</span>
               </button>
-              <button className="flex flex-col items-center justify-center px-4 py-1 text-white">
+              {/* <button className={`flex flex-col items-center justify-center px-4 py-1 text-white cursor-pointer`}>
                 <Video className="w-5 h-5 mb-1" />
                 <span className="text-xs">Video</span>
-              </button>
-              <button className="flex flex-col items-center justify-center px-4 py-1 text-white" onClick={handleHoldAndUnHold}>
-               
-                {isOnHold ?  <Play className="w-5 h-5 mb-1" /> :  <Pause className="w-5 h-5 mb-1" />}
-                <span className="text-xs">{isOnHold ? "Unhold" : "Hold"}</span>
-              </button>
-              <button className="flex flex-col items-center justify-center px-4 py-1 text-white">
+              </button> */}
+              
+              {/* <button className={`flex flex-col items-center justify-center px-4 py-1 text-white cursor-pointer`} onClick={handleTransfer}>
                 <ArrowRightLeft className="w-5 h-5 mb-1" />
                 <span className="text-xs">Transfer</span>
               </button>
-              <button className="flex flex-col items-center justify-center px-4 py-1 text-white">
+              <button className={`flex flex-col items-center justify-center px-4 py-1 text-white cursor-pointer`}>
                 <Plus className="w-5 h-5 mb-1" />
                 <span className="text-xs">Add call</span>
-              </button>
+              </button> */}
             </div>
           </div>
 
@@ -429,6 +441,14 @@ export default function Page() {
           </div>
         </div>
       }
+
+      <DTMFKeyboard
+        dtmf={dtmf}
+        handleSendDTMF={handleSendDTMF}
+        onOpenChange={() => setIsKeyBoardOpen(false)}
+        open={isKeybordOpen}
+        setdtmf={setdtmf}
+      />
 
 
       <audio ref={audioRef}></audio>

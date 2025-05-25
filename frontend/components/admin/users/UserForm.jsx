@@ -81,6 +81,9 @@ const UserForm = ({ user, open, onOpenChange, onSubmit }) => {
                 id="username"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
+                type={"number"}
+                min={10000}
+                max={19999}
                 placeholder="Enter Username"
                 required
               />

@@ -21,7 +21,6 @@ const AdminSidebar = () => {
     { name: 'Dashboard', path: '/admin', icon: <Home className="h-5 w-5" /> },
     { name: 'Analysis', path: '/admin/analysis', icon: <BarChart className="h-5 w-5" /> },
     { name: 'Users', path: '/admin/users', icon: <Users className="h-5 w-5" /> },
-    { name: 'Create User', path: '/admin/create-user', icon: <UserPlus className="h-5 w-5" /> },
     { name: 'Calls', path: '/admin/calls', icon: <Phone className="h-5 w-5" /> },
   ];
 

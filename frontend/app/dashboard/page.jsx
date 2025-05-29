@@ -36,28 +36,36 @@ import DTMFKeyboard from "@/components/DTMFKeyboard";
 
 const server = "wss://freeswitch.myrealmarket.com:7443";
 
+
+const labels = {
+  "ringing": "Ringing...",
+  "connecting": "Connecting...",
+  "process": "",
+}
 export default function Page() {
   const [activeTab, setActiveTab] = useState("contacts")
   const [activeFilter, setActiveFilter] = useState("all")
   const { user, setUser, setIsAuth } = useUser();
   const audioRef = useRef(null);
+  const incomingToneRef = useRef(null);
+  const outgoingToneRef = useRef(null);
   const userRef = useRef(null);
   const [registeredUser, setRegisteredUser] = useState(null);
   const [incomingCall, setIncomingCall] = useState(false);
-  const [callInfo,setCallInfo] = useState({
+  const [callInfo, setCallInfo] = useState({
     host: "",
-    port:"",
+    port: "",
     schema: "",
     user: ""
   });
-  const [number,setNumber] = useState('')
+  const [number, setNumber] = useState('')
 
   // idle , ringing, process, incoming
   const [callStatus, setCallStatus] = useState("idle");
-  const [isMute,setIsMute] = useState(false);
-  const [isOnHold,setIsOnHold] = useState(false);
-  const [isKeybordOpen,setIsKeyBoardOpen] = useState(false);
-  const [dtmf,setdtmf] = useState('');
+  const [isMute, setIsMute] = useState(false);
+  const [isOnHold, setIsOnHold] = useState(false);
+  const [isKeybordOpen, setIsKeyBoardOpen] = useState(false);
+  const [dtmf, setdtmf] = useState('');
   const router = useRouter()
 
   const registerUser = async (aor, username, password) => {
@@ -73,7 +81,7 @@ export default function Page() {
         authorizationUsername: username,
       }
     };
- 
+
     const simpleUser = new Web.SimpleUser(server, options);
 
     simpleUser.delegate = {
@@ -82,6 +90,7 @@ export default function Page() {
         setCallInfo(simpleUser.session.remoteIdentity.uri.normal)
         setCallStatus('incoming')
         setIncomingCall(true);
+        incomingToneRef.current.play();
       },
       onCallHangup: () => {
         console.log("Call ended.");
@@ -90,11 +99,15 @@ export default function Page() {
         setIncomingCall(false);
         setCallInfo
         setCallInfo({})
+        outgoingToneRef.current.pause();
+        incomingToneRef.current.pause();
       },
       onCallAnswered: () => {
         console.log("Call answered.");
         setCallStatus("process");
         setIncomingCall(false);
+        outgoingToneRef.current.pause();
+        incomingToneRef.current.pause();
       },
       onRegistered: () => {
         console.log("Registered");
@@ -103,7 +116,7 @@ export default function Page() {
         console.log("Unregistered");
       },
       onRefer: (referral) => {
-        console.log(referral,"referral")
+        console.log(referral, "referral")
       }
     };
 
@@ -121,15 +134,19 @@ export default function Page() {
 
   const handleCall = async (number) => {
     if (userRef.current) {
-      await userRef.current.call(`sip:${number}@161.35.57.104`);
-      setCallStatus("ringing")
-      setCallInfo
+
       setCallInfo({
         host: "161.35.57.104",
         user: number,
         schema: "sip",
         port: undefined
       });
+
+      setCallStatus("connecting")
+      await userRef.current.call(`sip:${number}@161.35.57.104`);
+      outgoingToneRef.current.play();
+      setCallStatus("ringing")
+
     } else {
       console.log("Register a user before making a call.");
     }
@@ -141,6 +158,8 @@ export default function Page() {
       setCallStatus("Connected");
       setCallStatus('process')
       setIncomingCall(false);
+      outgoingToneRef.current.pause();
+      incomingToneRef.current.pause();
     }
   };
 
@@ -150,16 +169,18 @@ export default function Page() {
       setCallStatus("idle");
       setCallInfo({});
       setdtmf('')
+      outgoingToneRef.current.pause();
+      incomingToneRef.current.pause();
     }
   };
 
   const handleMuteAndUnmute = async () => {
-    if(isMute){
+    if (isMute) {
       setIsMute(false);
       if (userRef.current) {
         await userRef.current.unmute();
       }
-    }else{
+    } else {
       setIsMute(true);
       if (userRef.current) {
         await userRef.current.mute();
@@ -168,12 +189,12 @@ export default function Page() {
   }
 
   const handleHoldAndUnHold = async () => {
-    if(isOnHold){
+    if (isOnHold) {
       setIsOnHold(false);
       if (userRef.current) {
         await userRef.current.unhold();
       }
-    }else{
+    } else {
       setIsOnHold(true);
       if (userRef.current) {
         await userRef.current.hold();
@@ -218,7 +239,7 @@ export default function Page() {
 
   const handleTransfer = async () => {
     console.log(userRef.current.session.state)
-    await userRef.current.session?.refer("sip:1006@161.35.57.104",{});
+    await userRef.current.session?.refer("sip:1006@161.35.57.104", {});
   }
 
   return (
@@ -232,7 +253,7 @@ export default function Page() {
           }
           <Settings className="w-5 h-5 text-gray-500" />
           <button className="bg-none border-none" onClick={handleLogout}>
-            <DoorOpen/>
+            <DoorOpen />
           </button>
         </div>
 
@@ -342,7 +363,7 @@ export default function Page() {
         (callStatus == "idle" || callStatus == "incoming") &&
         <div className="flex-1 flex flex-col bg-black relative">
           <div className="h-full w-full flex flex-col p-8 justify-end">
-            <input className="bg-none border-none text-2xl mb-5 text-white outline-none" value={number} onChange={(e) => setNumber(e.target.value)}/>
+            <input className="bg-none border-none text-2xl mb-5 text-white outline-none" value={number} onChange={(e) => setNumber(e.target.value)} />
             <div className="grid grid-cols-3 h-[50%] gap-4">
               <button className="text-white bg-orange-400 flex items-center justify-center rounded-md cursor-pointer" onClick={() => setNumber(prev => `${prev}${1}`)}>1</button>
               <button className="text-white bg-orange-400 flex items-center justify-center rounded-md cursor-pointer" onClick={() => setNumber(prev => `${prev}${2}`)}>2</button>
@@ -353,9 +374,9 @@ export default function Page() {
               <button className="text-white bg-orange-400 flex items-center justify-center rounded-md cursor-pointer" onClick={() => setNumber(prev => `${prev}${7}`)}>7</button>
               <button className="text-white bg-orange-400 flex items-center justify-center rounded-md cursor-pointer" onClick={() => setNumber(prev => `${prev}${8}`)}>8</button>
               <button className="text-white bg-orange-400 flex items-center justify-center rounded-md cursor-pointer" onClick={() => setNumber(prev => `${prev}${9}`)}>9</button>
-              <button className="text-white bg-orange-400 flex items-center justify-center rounded-md cursor-pointer" onClick={() => handleCall(number)}><PhoneCallIcon/></button>
+              <button className="text-white bg-orange-400 flex items-center justify-center rounded-md cursor-pointer" onClick={() => handleCall(number)}><PhoneCallIcon /></button>
               <button className="text-white bg-orange-400 flex items-center justify-center rounded-md cursor-pointer" onClick={() => setNumber(prev => `${prev}${0}`)}>0</button>
-              <button className="text-white bg-orange-400 flex items-center justify-center rounded-md cursor-pointer" onClick={() => setNumber(prev => prev.slice(0,prev.length-1))}><DeleteIcon/></button>
+              <button className="text-white bg-orange-400 flex items-center justify-center rounded-md cursor-pointer" onClick={() => setNumber(prev => prev.slice(0, prev.length - 1))}><DeleteIcon /></button>
             </div>
           </div>
         </div>
@@ -368,7 +389,7 @@ export default function Page() {
           <div className="flex justify-center py-2 border-b border-gray-700">
             <div className="flex space-x-2">
               <button className={`flex flex-col items-center justify-center px-4 py-1 ${isMute ? "text-red-500" : "text-white"} cursor-pointer`} onClick={handleMuteAndUnmute}>
-                
+
                 <MicOff className="w-5 h-5 mb-1" />
                 <span className="text-xs">Mute</span>
               </button>
@@ -396,7 +417,7 @@ export default function Page() {
                 <Video className="w-5 h-5 mb-1" />
                 <span className="text-xs">Video</span>
               </button> */}
-              
+
               {/* <button className={`flex flex-col items-center justify-center px-4 py-1 text-white cursor-pointer`} onClick={handleTransfer}>
                 <ArrowRightLeft className="w-5 h-5 mb-1" />
                 <span className="text-xs">Transfer</span>
@@ -410,7 +431,7 @@ export default function Page() {
 
           {/* Call content */}
           <div className="flex-1 flex flex-col items-center justify-center">
-            <div className="text-3xl text-white mb-8">{callStatus}</div>
+            <div className="text-3xl text-white mb-8">{labels[callStatus]}</div>
 
             {/* Avatar */}
             <div className="w-32 h-32 bg-gray-300 rounded-full mb-4"></div>
@@ -420,8 +441,8 @@ export default function Page() {
               <div className="text-xl text-white">{callInfo?.user}</div>
               <div className="text-sm text-white">{callInfo?.user}@{callInfo?.host}{callInfo?.port}</div>
               {
-                callStatus != "ringing" &&
-                <div className="text-sm text-green-500"><CallCounter/></div>
+                (callStatus != "ringing" && callStatus != "connecting") &&
+                <div className="text-sm text-green-500"><CallCounter /></div>
               }
             </div>
           </div>
@@ -452,6 +473,8 @@ export default function Page() {
 
 
       <audio ref={audioRef}></audio>
+      <audio src="/call-coming-rintone.mp3" ref={incomingToneRef} loop></audio>
+      <audio src="/calling-ringtone.wav" ref={outgoingToneRef} loop></audio>
     </div>
   )
 }

@@ -1,7 +1,7 @@
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { UserProvier } from "@/providers/UserProvider";
-
+import { ToastContainer, toast } from 'react-toastify';
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
@@ -26,6 +26,7 @@ export default function RootLayout({ children }) {
       <UserProvier>
         {children}
       </UserProvier>
+      <ToastContainer/>
       </body>
     </html>
   );

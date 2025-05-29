@@ -4,6 +4,7 @@ import { useUser } from '@/providers/UserProvider';
 import { registerRequest } from '@/services/SIPService';
 import { useRouter } from 'next/navigation';
 import React, { useState } from 'react';
+import {  toast } from 'react-toastify';
 
 const Page = () => {
   const [loading,setLoading] = useState(false);
@@ -32,8 +33,10 @@ const Page = () => {
       }else{
         router.push("/dashboard");
       }
+
+      toast.success("Login Successfully")
     } catch (error) {
-      alert(error.message)
+      toast.error("Login UnSuccessfully")
       console.error(error);
     }finally{
       setLoading(false);

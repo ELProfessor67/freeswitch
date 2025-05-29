@@ -32,7 +32,7 @@ export const loginController = catchAsyncError(async (req, res, next) => {
         httpOnly: true,    // Prevent access to the cookie from JavaScript
         expires: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000), // Set expiration time
         secure: process.env.NODE_ENV === 'production' ? true : false,  // Only send cookies over HTTPS in production,
-        sameSite: 'none'
+        sameSite: process.env.NODE_ENV === 'production' ? 'none' : undefined,
     };
 
     res.status(201).cookie("token", jwttoken, options).json({

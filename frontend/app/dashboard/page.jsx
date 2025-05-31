@@ -24,6 +24,11 @@ import {
   PhoneCallIcon,
   DeleteIcon,
   MicOff,
+  Check,
+  Cross,
+  Wifi,
+  WifiOff,
+  WifiHigh,
 } from "lucide-react"
 import { useUser } from '@/providers/UserProvider'
 import React, { useEffect, useState, useRef } from 'react'
@@ -32,7 +37,9 @@ import { CallCounter } from "@/components/CallCounterComponent";
 import { logoutRequest } from "@/http/authHttp";
 import { useRouter } from "next/navigation";
 import DTMFKeyboard from "@/components/DTMFKeyboard";
-
+import { toast } from "react-toastify";
+import Recorder from 'recorder-js';
+import { measureDownloadSpeedAndCandle } from "@/lib/utils";
 
 const server = "wss://freeswitch.myrealmarket.com:7443";
 
@@ -40,7 +47,7 @@ const server = "wss://freeswitch.myrealmarket.com:7443";
 const labels = {
   "ringing": "Ringing...",
   "connecting": "Connecting...",
-  "process": "",
+  "process": "Connected",
 }
 export default function Page() {
   const [activeTab, setActiveTab] = useState("contacts")
@@ -64,9 +71,27 @@ export default function Page() {
   const [callStatus, setCallStatus] = useState("idle");
   const [isMute, setIsMute] = useState(false);
   const [isOnHold, setIsOnHold] = useState(false);
+  const [isRecordingStarted, setIsRecordingStarted] = useState(false);
   const [isKeybordOpen, setIsKeyBoardOpen] = useState(false);
   const [dtmf, setdtmf] = useState('');
-  const router = useRouter()
+  const [connected, setConnected] = useState(false)
+  const router = useRouter();
+  const contextRef = useRef();
+  const recorderRef = useRef();
+  const recordedChunksRef = useRef();
+  const [signalStatistics, setSignalStatistics] = useState({
+    candleLength: 0,
+    speedMbps: 0
+  })
+
+
+
+  useEffect(() => {
+    setInterval(async () => {
+      const statistics = await measureDownloadSpeedAndCandle();
+      setSignalStatistics(statistics);
+    }, 5000)
+  }, [])
 
   const registerUser = async (aor, username, password) => {
     const options = {
@@ -97,7 +122,6 @@ export default function Page() {
         setCallStatus("idle");
         setdtmf('')
         setIncomingCall(false);
-        setCallInfo
         setCallInfo({})
         outgoingToneRef.current.pause();
         incomingToneRef.current.pause();
@@ -108,6 +132,7 @@ export default function Page() {
         setIncomingCall(false);
         outgoingToneRef.current.pause();
         incomingToneRef.current.pause();
+        setupRecorder();
       },
       onRegistered: () => {
         console.log("Registered");
@@ -117,6 +142,13 @@ export default function Page() {
       },
       onRefer: (referral) => {
         console.log(referral, "referral")
+      },
+      onCallCreated: () => {
+        console.log("Call created successfully")
+      },
+      onServerConnect: () => {
+        console.log("Server Connected");
+        setConnected(true);
       }
     };
 
@@ -133,22 +165,27 @@ export default function Page() {
   };
 
   const handleCall = async (number) => {
-    if (userRef.current) {
+    try {
+      if (userRef.current) {
 
-      setCallInfo({
-        host: "161.35.57.104",
-        user: number,
-        schema: "sip",
-        port: undefined
-      });
+        setCallInfo({
+          host: "161.35.57.104",
+          user: number,
+          schema: "sip",
+          port: undefined
+        });
 
-      setCallStatus("connecting")
-      await userRef.current.call(`sip:${number}@161.35.57.104`);
-      outgoingToneRef.current.play();
-      setCallStatus("ringing")
+        setCallStatus("connecting")
+        await userRef.current.call(`sip:${number}@161.35.57.104`);
+        outgoingToneRef.current.play();
+        setCallStatus("ringing")
 
-    } else {
-      console.log("Register a user before making a call.");
+      } else {
+        toast.error("Register a user before making a call.");
+      }
+
+    } catch (error) {
+      toast.error(error.message);
     }
   };
 
@@ -160,6 +197,7 @@ export default function Page() {
       setIncomingCall(false);
       outgoingToneRef.current.pause();
       incomingToneRef.current.pause();
+      setupRecorder();
     }
   };
 
@@ -223,6 +261,12 @@ export default function Page() {
   const handleLogout = async () => {
     try {
       const res = await logoutRequest();
+
+      if (userRef.current) {
+        await userRef.current.unregister();
+        await userRef.current.disconnect();
+      }
+
       setIsAuth(false);
       setUser(null);
       router.push("/")
@@ -242,6 +286,68 @@ export default function Page() {
     await userRef.current.session?.refer("sip:1006@161.35.57.104", {});
   }
 
+
+  const getStream = async () => {
+    const track1 = await navigator.mediaDevices.getUserMedia({
+      audio: {
+        echoCancellation: true,
+        autoGainControl: false,
+        noiseSuppression: true
+      }
+    })
+
+    const track2 = audioRef.current.srcObject;
+
+    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+
+    // Create MediaStream sources from each track
+    const source1 = audioContext.createMediaStreamSource(track1);
+    const source2 = audioContext.createMediaStreamSource(track2);
+
+    // Create a destination node to mix the tracks into one output stream
+    const destination = audioContext.createMediaStreamDestination();
+
+    // Connect both sources to the destination (mixing happens here)
+    source1.connect(destination);
+    source2.connect(destination);
+
+    // The mixed stream containing both tracks
+    const mixedStream = destination.stream;
+
+    contextRef.current = audioContext;
+    return mixedStream;
+  }
+
+  const setupRecorder = async () => {
+    const stream = await getStream();
+    const recorder = new Recorder(contextRef.current)
+    recorderRef.current = recorder;
+
+    recorder.init(stream);
+  };
+
+
+
+  const handleRecord = async () => {
+    try {
+      if (isRecordingStarted) {
+        const data = await recorderRef.current.stop();
+        Recorder.download(data.blob, "call-recording");
+        setIsRecordingStarted(false);
+        toast.success("Recording Stoped");
+      } else {
+        await recorderRef.current.start();
+        setIsRecordingStarted(true);
+        toast.success("Recording Started");
+      }
+    } catch (error) {
+      console.log(error)
+      setIsRecordingStarted(false)
+      toast.error(error.message)
+    }
+  }
+
+
   return (
     <div className="flex h-screen w-full bg-white">
       {/* Left sidebar */}
@@ -249,7 +355,7 @@ export default function Page() {
         {/* Top bar with IP and settings */}
         <div className="flex items-center justify-between px-4 py-2 border-b border-gray-200 bg-gray-50">
           {user?.username &&
-            <span className="text-sm text-gray-600">{user?.username}@157.245.141.163</span>
+            <span className="text-sm text-gray-500 flex items-center">{connected ? <Wifi className="text-green-500 mr-2" /> : <WifiOff className="text-red-500 mr-2" />} {user?.username}@157.245.141.163</span>
           }
           <Settings className="w-5 h-5 text-gray-500" />
           <button className="bg-none border-none" onClick={handleLogout}>
@@ -405,11 +511,27 @@ export default function Page() {
                 <Grid3x3 className="w-5 h-5 mb-1" />
                 <span className="text-xs">Keypad</span>
               </button>
-              <button className={`flex flex-col items-center justify-center px-4 py-1 text-white cursor-pointer`}>
-                <BarChart2 className="w-5 h-5 mb-1" />
-                <span className="text-xs">Statistics</span>
-              </button>
-              <button className={`flex flex-col items-center justify-center px-4 py-1 text-white cursor-pointer`}>
+              <div className="flex flex-col items-center justify-center px-4 py-1 text-white cursor-pointer">
+                {/* 👇 Signal Bars */}
+                <div className="flex flex-row justify-end items-end h-12 space-y-0.5 mb-1">
+                  {[1, 2, 3, 4].map((level) => (
+                    <div
+                      key={level}
+                      className={`w-2 rounded-sm ${signalStatistics.candleLength >= level ? "bg-green-500" : "bg-gray-500"
+                        }`}
+                      style={{ height: `${level * 5}px` }}
+                    />
+                  ))}
+                </div>
+
+                {/* 👇 Speed Text */}
+                <div className="text-[10px] text-center text-gray-300">
+                  {signalStatistics.speedMbps.toFixed(2)} Mbps
+                </div>
+              </div>
+
+              {/* On click recording toggle  */}
+              <button className={`flex flex-col items-center justify-center px-4 py-1 cursor-pointer  ${isRecordingStarted ? "text-red-500" : "text-white"}`} onClick={handleRecord}>
                 <Circle className="w-5 h-5 mb-1" />
                 <span className="text-xs">Record</span>
               </button>
@@ -473,8 +595,8 @@ export default function Page() {
 
 
       <audio ref={audioRef}></audio>
-      <audio src="/call-coming-rintone.mp3" ref={incomingToneRef} loop></audio>
-      <audio src="/calling-ringtone.wav" ref={outgoingToneRef} loop></audio>
+      <audio src="/call-coming-rintone.mp3" ref={incomingToneRef} loop hidden></audio>
+      <audio src="/calling-ringtone.wav" ref={outgoingToneRef} loop hidden></audio>
     </div>
   )
 }

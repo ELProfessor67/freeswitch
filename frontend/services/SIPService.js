@@ -19,8 +19,8 @@ export const registerRequest = async (aor,username,password,server) => {
 
             simpleUser.delegate = {
                 onRegistered: async () => {
-                    await simpleUser.unregister();
                     resolve("Register Successfully")
+                    simpleUser.unregister();
                 },
                 onUnregistered: () => {
                     reject("Invalid Credentials")

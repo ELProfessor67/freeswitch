@@ -241,7 +241,8 @@ export default function Page() {
   useEffect(() => {
     if (user) {
       const wss = `wss://${user?.pbx?.SIP_HOST}:${user?.pbx?.WSS_POST}`;
-      registerUser(user.SIP, user.username, user.password,wss)
+      const SIP = `sip:${user.username}@${user?.pbx?.SIP_HOST}` + (user?.pbx?.SIP_PORT ? user?.pbx?.SIP_PORT : "");
+      registerUser(SIP, user.username, user.password,wss);
     }
   }, [user]);
 

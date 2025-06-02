@@ -18,12 +18,12 @@ export const registerRequest = async (aor,username,password,server) => {
             const simpleUser = new Web.SimpleUser(server, options);
 
             simpleUser.delegate = {
-                onRegistered: () => {
+                onRegistered: async () => {
+                    await simpleUser.unregister();
                     resolve("Register Successfully")
-                    simpleUser.unregister();
                 },
                 onUnregistered: () => {
-                reject("Invalid Credentials")
+                    reject("Invalid Credentials")
                 }
             };
 

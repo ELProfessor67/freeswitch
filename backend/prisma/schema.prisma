@@ -12,10 +12,22 @@ enum UserRole {
   ADMIN
 }
 
+model PBX {
+  id String @unique @id @default(uuid())
+  SIP_HOST String
+  SIP_PORT String?
+  WSS_POST String?
+  name String
+  users User[]
+}
+
 model User {
   id String @unique @id @default(uuid())
-  username String @unique
+  username String
   password String
-  SIP String @unique
   role UserRole @default(USER)
+  pbx_id String
+  pbx PBX @relation(fields: [pbx_id], references: [id])
 }
+
+

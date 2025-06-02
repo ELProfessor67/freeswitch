@@ -3,7 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { BarChart, Users, Phone, UserPlus, LogOut, Home } from 'lucide-react';
+import { BarChart, Users, Phone, UserPlus, LogOut, Home, Server } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import {
@@ -21,7 +21,7 @@ const AdminSidebar = () => {
     { name: 'Dashboard', path: '/admin', icon: <Home className="h-5 w-5" /> },
     { name: 'Analysis', path: '/admin/analysis', icon: <BarChart className="h-5 w-5" /> },
     { name: 'Users', path: '/admin/users', icon: <Users className="h-5 w-5" /> },
-    { name: 'Calls', path: '/admin/calls', icon: <Phone className="h-5 w-5" /> },
+    { name: 'PBX', path: '/admin/pbx', icon: <Server className="h-5 w-5" /> },
   ];
 
   const toggleSidebar = () => {

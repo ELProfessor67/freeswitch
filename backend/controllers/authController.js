@@ -4,27 +4,45 @@ import { prismaClient } from "../services/prismaService.js"
 import { generateJWTToken } from '../services/authService.js';
 
 export const loginController = catchAsyncError(async (req, res, next) => {
-    const { username, password, SIP } = req.body;
+    const { username, password } = req.body;
 
-    if(!username || !password || !SIP){
+    if(!username || !password){
         return next(new ErrorHandler("All fields are required.",401))
     }
 
-    let user = await prismaClient.user.findUnique({
+
+
+
+    let user = await prismaClient.user.findFirst({
         where: {
-            username
-        },
-    })
+            username,
+            password
+        }
+    });
+  
+   
+
 
     if (!user) {
-        user = await prismaClient.user.create({
-            data: {
-                username,
-                password,
-                SIP
-            }
-        })
+        return next(new ErrorHandler('Invalid Credentials', 400));
     }
+
+    user = await prismaClient.user.findFirst({
+        where: {
+            username,
+            password
+        },
+
+        select: {
+            id: true,
+            password: true,
+            role: true,
+            username: true,
+            pbx: true
+        }
+    });
+   
+
 
     const jwttoken = generateJWTToken(user);
 
@@ -35,7 +53,7 @@ export const loginController = catchAsyncError(async (req, res, next) => {
         sameSite: process.env.NODE_ENV === 'production' ? 'none' : undefined,
     };
 
-    res.status(201).cookie("token", jwttoken, options).json({
+    res.status(200).cookie("token", jwttoken, options).json({
         success: true,
         message: "Login Successfully",
         user

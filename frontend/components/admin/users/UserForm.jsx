@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
   SelectTrigger,
   SelectValue,
@@ -21,16 +22,19 @@ import {
 } from '@/components/ui/dialog';
 import { Switch } from '@/components/ui/switch';
 
-const UserForm = ({ user, open, onOpenChange, onSubmit }) => {
+const UserForm = ({ user, open, onOpenChange, onSubmit,pbxs }) => {
   const { toast } = useToast();
   const [username, setUsername] = useState(user?.username || '');
   const [password, setPassword] = useState(user?.password || '');
+  const [pbx, setpbx] = useState(user?.pbx_id || '');
 
   useEffect(() => {
     if (user) {
       setUsername(user.username);
       setPassword(user.password);
+      setpbx(user.pbx.id);
     } else {
+      setpbx('');
       setUsername('');
       setPassword('');;
     }
@@ -39,10 +43,10 @@ const UserForm = ({ user, open, onOpenChange, onSubmit }) => {
   const handleSubmit = (e) => {
     e.preventDefault();
 
-    if (!username.trim() || !password.trim()) {
+    if (!username.trim() || !password.trim() || !pbx) {
       toast({
         title: "Error",
-        description: "Username and password are required fields.",
+        description: "Username and password and PBX are required fields.",
         variant: "destructive",
       });
       return;
@@ -51,8 +55,9 @@ const UserForm = ({ user, open, onOpenChange, onSubmit }) => {
     const userData = {
       username,
       password,
+      pbx_id: pbx,
       update: !!user,
-      username1: user?.username
+      id: user?.id
     };
 
     onSubmit(userData);
@@ -81,9 +86,7 @@ const UserForm = ({ user, open, onOpenChange, onSubmit }) => {
                 id="username"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                type={"number"}
-                min={10000}
-                max={19999}
+                type="text"
                 placeholder="Enter Username"
                 required
               />
@@ -99,6 +102,25 @@ const UserForm = ({ user, open, onOpenChange, onSubmit }) => {
                 placeholder="*********"
                 required
               />
+            </div>
+
+
+            <div className="space-y-2">
+              <Label htmlFor="password">PBX</Label>
+              <Select value={pbx} onValueChange={value => setpbx(value)}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select PBX" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectGroup>
+                    {
+                      pbxs.map(pbx => (
+                        <SelectItem value={pbx.id}>{pbx.name}</SelectItem>
+                      ))
+                    }
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
             </div>
           </div>
 

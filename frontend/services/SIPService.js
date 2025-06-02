@@ -3,10 +3,10 @@ import { Web } from "sip.js";
 
 
 
-export const registerRequest = async (aor,username,password) => {
+export const registerRequest = async (aor,username,password,server) => {
     return new Promise(async (resolve, reject) => {
         try {
-            const server = "wss://freeswitch.myrealmarket.com:7443";
+            
             const options = {
                 aor,
                 userAgentOptions: {

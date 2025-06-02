@@ -12,7 +12,14 @@ export const authMiddleware = catchAsyncError(async (req,res,next) => {
     const user = await prismaClient.user.findUnique({
         where: {
           id: decodeToken.user_id, // Replace with your token decoding logic
-        }
+        },
+        select: {
+          id: true,
+          password: true,
+          role: true,
+          username: true,
+          pbx: true
+      }
     });
 
 

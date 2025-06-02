@@ -41,8 +41,6 @@ import { toast } from "react-toastify";
 import Recorder from 'recorder-js';
 import { measureDownloadSpeedAndCandle } from "@/lib/utils";
 
-const server = "wss://freeswitch.myrealmarket.com:7443";
-
 
 const labels = {
   "ringing": "Ringing...",
@@ -93,7 +91,7 @@ export default function Page() {
     }, 5000)
   }, [])
 
-  const registerUser = async (aor, username, password) => {
+  const registerUser = async (aor, username, password,server) => {
     const options = {
       aor,
       media: {
@@ -169,14 +167,14 @@ export default function Page() {
       if (userRef.current) {
 
         setCallInfo({
-          host: "161.35.57.104",
+          host: user?.pbx?.SIP_HOST,
           user: number,
           schema: "sip",
           port: undefined
         });
 
         setCallStatus("connecting")
-        await userRef.current.call(`sip:${number}@161.35.57.104`);
+        await userRef.current.call(`sip:${number}@${user?.pbx?.SIP_HOST}`);
         outgoingToneRef.current.play();
         setCallStatus("ringing")
 
@@ -242,7 +240,8 @@ export default function Page() {
 
   useEffect(() => {
     if (user) {
-      registerUser(user.SIP, user.username, user.password)
+      const wss = `wss://${user?.pbx?.SIP_HOST}:${user?.pbx?.WSS_POST}`;
+      registerUser(user.SIP, user.username, user.password,wss)
     }
   }, [user]);
 
@@ -355,7 +354,7 @@ export default function Page() {
         {/* Top bar with IP and settings */}
         <div className="flex items-center justify-between px-4 py-2 border-b border-gray-200 bg-gray-50">
           {user?.username &&
-            <span className="text-sm text-gray-500 flex items-center">{connected ? <Wifi className="text-green-500 mr-2" /> : <WifiOff className="text-red-500 mr-2" />} {user?.username}@157.245.141.163</span>
+            <span className="text-sm text-gray-500 flex items-center">{connected ? <Wifi className="text-green-500 mr-2" /> : <WifiOff className="text-red-500 mr-2" />} {user?.username}@{user?.pbx?.SIP_HOST}</span>
           }
           <Settings className="w-5 h-5 text-gray-500" />
           <button className="bg-none border-none" onClick={handleLogout}>

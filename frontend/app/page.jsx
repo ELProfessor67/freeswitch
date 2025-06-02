@@ -20,14 +20,14 @@ const Page = () => {
 
       const username = formdata.get("username");
       const password = formdata.get("password");
-      const SIP = `sip:${username}@161.35.57.104`;
-      formdata.append("SIP",SIP);
-
-      await registerRequest(SIP,username,password);
-
+      
+      
       const res = await loginRequest(formdata);
       setIsAuth(true);
       setUser(res.data.user);
+      const SIP = `sip:${username}@${res.data?.user?.pbx?.SIP_HOST}` + (res.data?.user?.pbx?.SIP_PORT ? res.data?.user?.pbx?.SIP_PORT : "");
+      const wss = `wss://${res.data?.user?.pbx?.SIP_HOST}:${res.data?.user?.pbx?.WSS_POST}`;
+      await registerRequest(SIP,username,password,wss);
       if(res.data.user?.role == "ADMIN"){
         router.push("/admin");
       }else{

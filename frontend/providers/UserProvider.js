@@ -20,7 +20,9 @@ export const UserProvier = ({children}) => {
             const user = res.data.user
             setUser(user);
             setIsAuth(true);
-            await registerRequest(user.SIP, user.username, user.password);
+            const SIP = `sip:${user.username}@${user?.pbx?.SIP_HOST}` + (user?.pbx?.SIP_PORT ? user?.pbx?.SIP_PORT : "");
+            const wss = `wss://${user?.pbx?.SIP_HOST}:${user?.pbx?.WSS_POST}`;
+            await registerRequest(SIP, user.username, user.password,wss);
             if(pathname == "/"){
                 if(user.role == "ADMIN"){
                     router.push("/admin")
@@ -29,6 +31,7 @@ export const UserProvier = ({children}) => {
                 }
             }
         } catch (error) {
+            console.log(error)
             setIsAuth(false);
             setUser(null);
             router.push("/");

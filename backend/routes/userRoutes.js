@@ -5,8 +5,8 @@ const router = express.Router();
 
 
 router.route("/create").post(authMiddleware,createUser)
-router.route("/update/:username").put(authMiddleware,updateUser)
-router.route("/delete/:username").delete(authMiddleware,deleteUser)
+router.route("/update/:user_id").put(authMiddleware,updateUser)
+router.route("/delete/:user_id").delete(authMiddleware,deleteUser)
 router.route("/get").get(authMiddleware,getUsers)
 router.route("/get/:username").get(authMiddleware,getUser)
 

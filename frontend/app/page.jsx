@@ -25,11 +25,13 @@ const Page = () => {
       setIsAuth(true);
       setUser(res.data.user);
       const {extension_number,extension_password,pbx} = res.data.user;
+      const user = res.data.user;
       const username = extension_number;
       const password = extension_password;
       const SIP = `sip:${username}@${pbx?.SIP_HOST}` + (pbx?.SIP_PORT ? pbx?.SIP_PORT : "");
       const wss = `wss://${pbx?.SIP_HOST}:${pbx?.WSS_PORT || ""}`;
       await registerRequest(SIP, username, password, wss);
+    
       if (user?.role == "ADMIN") {
         router.push("/admin");
       } else {

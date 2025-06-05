@@ -22,28 +22,38 @@ import {
 } from '@/components/ui/dialog';
 import { Switch } from '@/components/ui/switch';
 
-const UserForm = ({ user, open, onOpenChange, onSubmit,pbxs }) => {
+const UserForm = ({ user, open, onOpenChange, onSubmit, pbxs }) => {
   const { toast } = useToast();
-  const [username, setUsername] = useState(user?.username || '');
+  const [email, setEmail] = useState(user?.email || '');
   const [password, setPassword] = useState(user?.password || '');
   const [pbx, setpbx] = useState(user?.pbx_id || '');
+  const [extentionNumber, setExtensionNumber] = useState(user?.extension_number || '');
+  const [extentionPassword, setExtensionPassword] = useState(user?.extension_password || '');
+  const [role, setRole] = useState(user?.role || 'USER');
+  const [loading, setLoading] = useState(false)
 
   useEffect(() => {
     if (user) {
-      setUsername(user.username);
+      setEmail(user.email);
       setPassword(user.password);
       setpbx(user.pbx.id);
+      setExtensionNumber(user.extension_number)
+      setExtensionPassword(user.extension_password)
+      setRole(user.role);
     } else {
       setpbx('');
-      setUsername('');
-      setPassword('');;
+      setEmail('');
+      setPassword('');
+      setExtensionNumber('')
+      setExtensionPassword('')
+      setRole('')
     }
   }, [user, open]);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!username.trim() || !password.trim() || !pbx) {
+    if (!email.trim() || !password.trim() || !pbx || !extentionNumber || !extentionPassword) {
       toast({
         title: "Error",
         description: "Username and password and PBX are required fields.",
@@ -51,29 +61,27 @@ const UserForm = ({ user, open, onOpenChange, onSubmit,pbxs }) => {
       });
       return;
     }
-
+    setLoading(true)
     const userData = {
-      username,
+      email,
       password,
+      extension_number: extentionNumber,
+      extension_password: extentionPassword,
+      role: role,
       pbx_id: pbx,
       update: !!user,
       id: user?.id
     };
 
-    onSubmit(userData);
+    await onSubmit(userData);
     onOpenChange(false);
 
-    toast({
-      title: user ? "User Updated" : "User Created",
-      description: user
-        ? `${username}'s information has been updated.`
-        : `${username} has been added successfully.`,
-    });
+    setLoading(false);
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px] bg-white">
+      <DialogContent className="sm:max-w-[500px] bg-white border-none shadow-md">
         <DialogHeader>
           <DialogTitle>{user ? 'Edit User' : 'Create New User'}</DialogTitle>
         </DialogHeader>
@@ -81,13 +89,13 @@ const UserForm = ({ user, open, onOpenChange, onSubmit,pbxs }) => {
         <form onSubmit={handleSubmit} className="space-y-6 py-4">
           <div className="grid grid-cols-1 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="username">Username</Label>
+              <Label htmlFor="email">Email</Label>
               <Input
-                id="username"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                type="text"
-                placeholder="Enter Username"
+                id="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                type="email"
+                placeholder="Enter Email"
                 required
               />
             </div>
@@ -104,6 +112,47 @@ const UserForm = ({ user, open, onOpenChange, onSubmit,pbxs }) => {
               />
             </div>
 
+            <div className="space-y-2">
+              <Label htmlFor="exnumber">Extension Number</Label>
+              <Input
+                id="exnumber"
+                type="text"
+                value={extentionNumber}
+                onChange={(e) => setExtensionNumber(e.target.value)}
+                placeholder="Enter Extension Number"
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="expassword">Extension Password</Label>
+              <Input
+                id="expassword"
+                type="password"
+                value={extentionPassword}
+                onChange={(e) => setExtensionPassword(e.target.value)}
+                placeholder="Enter Extension Password"
+                required
+              />
+            </div>
+
+
+            <div className="space-y-2">
+              <Label htmlFor="password">Role</Label>
+              <Select value={role} onValueChange={value => setRole(value)}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select Role" />
+                </SelectTrigger>
+                <SelectContent className={"bg-white border-none shadow-md"}>
+                  <SelectGroup>
+                    <SelectItem value={"USER"}>USER</SelectItem>
+                    <SelectItem value={"ADMIN"}>ADMIN</SelectItem>
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
+            </div>
+
+
 
             <div className="space-y-2">
               <Label htmlFor="password">PBX</Label>
@@ -111,7 +160,7 @@ const UserForm = ({ user, open, onOpenChange, onSubmit,pbxs }) => {
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="Select PBX" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className={"bg-white border-none shadow-md"} >
                   <SelectGroup>
                     {
                       pbxs.map(pbx => (
@@ -124,19 +173,27 @@ const UserForm = ({ user, open, onOpenChange, onSubmit,pbxs }) => {
             </div>
           </div>
 
- 
+
 
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
-            <Button type="submit">
-              {user ? 'Update User' : 'Create User'}
-            </Button>
+            {
+              loading ?
+                <Button type="button">
+                  Loading...
+                </Button>
+                :
+                <Button type="submit">
+                  {user ? 'Update User' : 'Create User'}
+                </Button>
+            }
+
           </DialogFooter>
         </form>
       </DialogContent>
-    </Dialog>
+    </Dialog >
   );
 };
 

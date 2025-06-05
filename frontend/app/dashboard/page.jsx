@@ -240,9 +240,10 @@ export default function Page() {
 
   useEffect(() => {
     if (user) {
-      const wss = `wss://${user?.pbx?.SIP_HOST}:${user?.pbx?.WSS_POST}`;
-      const SIP = `sip:${user.username}@${user?.pbx?.SIP_HOST}` + (user?.pbx?.SIP_PORT ? user?.pbx?.SIP_PORT : "");
-      registerUser(SIP, user.username, user.password,wss);
+      const {extension_number,extension_password,pbx} = user;
+      const wss = `wss://${user?.pbx?.SIP_HOST}:${user?.pbx?.WSS_PORT || ""}`;
+      const SIP = `sip:${extension_number}@${user?.pbx?.SIP_HOST}` + (user?.pbx?.SIP_PORT ? user?.pbx?.SIP_PORT : "");
+      registerUser(SIP, extension_number, extension_password,wss);
     }
   }, [user]);
 
@@ -354,8 +355,8 @@ export default function Page() {
       <div className="w-80 border-r border-gray-200 flex flex-col">
         {/* Top bar with IP and settings */}
         <div className="flex items-center justify-between px-4 py-2 border-b border-gray-200 bg-gray-50">
-          {user?.username &&
-            <span className="text-sm text-gray-500 flex items-center">{connected ? <Wifi className="text-green-500 mr-2" /> : <WifiOff className="text-red-500 mr-2" />} {user?.username}@{user?.pbx?.SIP_HOST}</span>
+          {user?.extension_number &&
+            <span className="text-sm text-gray-500 flex items-center">{connected ? <Wifi className="text-green-500 mr-2" /> : <WifiOff className="text-red-500 mr-2" />} {user?.extension_number}@{user?.pbx?.SIP_HOST}</span>
           }
           <Settings className="w-5 h-5 text-gray-500" />
           <button className="bg-none border-none" onClick={handleLogout}>

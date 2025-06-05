@@ -20,9 +20,10 @@ export const UserProvier = ({children}) => {
             const user = res.data.user
             setUser(user);
             setIsAuth(true);
-            const SIP = `sip:${user.username}@${user?.pbx?.SIP_HOST}` + (user?.pbx?.SIP_PORT ? user?.pbx?.SIP_PORT : "");
-            const wss = `wss://${user?.pbx?.SIP_HOST}:${user?.pbx?.WSS_POST}`;
-            await registerRequest(SIP, user.username, user.password,wss);
+            const {extension_number,extension_password,pbx} = user;
+            const SIP = `sip:${extension_number}@${pbx?.SIP_HOST}` + (pbx?.SIP_PORT ? pbx?.SIP_PORT : "");
+            const wss = `wss://${pbx?.SIP_HOST}:${pbx?.WSS_PORT}`;
+            await registerRequest(SIP, extension_number, extension_password,wss);
             if(pathname == "/"){
                 if(user.role == "ADMIN"){
                     router.push("/admin")

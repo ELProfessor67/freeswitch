@@ -3,11 +3,12 @@ import ErrorHandler from "../utils/errorHandler.js";
 import { prismaClient } from "../services/prismaService.js"
 import { generateJWTToken } from '../services/authService.js';
 import { createUser as createSIPUser, deleteUser as deleteSIPUser, updateUser as updateSIPUser, getUsers as getSIPUsers, isUserExists } from '../services/sipService.js';
+import bcrypt from 'bcrypt';
 
 export const createUser = catchAsyncError(async (req, res, next) => {
-    const { username, password, pbx_id } = req.body;
+    const { email, password,extension_number,extension_password, pbx_id,role } = req.body;
     
-    if (!username || !password || !pbx_id) {
+    if (!email || !password || !pbx_id) {
         return next(new ErrorHandler('All fields are required', 400));
     }
 
@@ -23,27 +24,31 @@ export const createUser = catchAsyncError(async (req, res, next) => {
     // Check if user already exists in database
     const existingUser = await prismaClient.user.findFirst({
         where: {
-            username,
-            pbx_id
+            email
         }
     });
    
     if (existingUser) {
-        return next(new ErrorHandler('User already exists in this PBX', 400));
+        return next(new ErrorHandler('User already exists with this email', 400));
     }
     
     // Create user in database
     const user = await prismaClient.user.create({
         data: {
-            username,
+            email,
             password,
+            extension_number,
+            extension_password,
+            role: role || "USER",
             pbx_id
         },
         select: {
             id: true,
             password: true,
             role: true,
-            username: true,
+            email: true,
+            extension_number: true,
+            extension_password: true,
             pbx: true
         }
     });
@@ -60,8 +65,10 @@ export const getUsers = catchAsyncError(async (req, res, next) => {
         select: {
             id: true,
             password: true,
+            email: true,
+            extension_number: true,
+            extension_password: true,
             role: true,
-            username: true,
             pbx: true
         }
     });
@@ -86,6 +93,9 @@ export const getUser = catchAsyncError(async (req, res, next) => {
         select: {
             id: true,
             password: true,
+            email,
+            extension_number,
+            extension_password,
             role: true,
             username: true,
             pbx: true
@@ -106,7 +116,7 @@ export const getUser = catchAsyncError(async (req, res, next) => {
 
 export const updateUser = catchAsyncError(async (req, res, next) => {
     const { user_id } = req.params;
-    const { username, password, pbx_id } = req.body;
+    const { email, password, extension_number, extension_password, pbx_id, role } = req.body;
 
     if (!user_id) {
         return next(new ErrorHandler('User ID is required', 400));
@@ -132,34 +142,38 @@ export const updateUser = catchAsyncError(async (req, res, next) => {
         }
     }
 
-    // Check if username already exists if username is being changed
-    if (username && username !== existingUser.username) {
-        const usernameExists = await prismaClient.user.findFirst({
+    // Check if email already exists if email is being changed
+    if (email && email !== existingUser.email) {
+        const emailExists = await prismaClient.user.findFirst({
             where: {
-                username,
-                pbx_id: pbx_id || existingUser.pbx_id,
-                id: { not: user_id }
+                email,
             }
         });
 
-        if (usernameExists) {
-            return next(new ErrorHandler('Username already exists', 400));
+        if (emailExists) {
+            return next(new ErrorHandler('Email already exists', 400));
         }
     }
+
+
 
     // Update user
     const updatedUser = await prismaClient.user.update({
         where: { id: user_id },
         data: {
-            ...(username && { username }),
+            ...(email && { email }),
             ...(password && { password }),
-            ...(pbx_id && { pbx_id })
+            ...(extension_number && { extension_number }),
+            ...(extension_password && { extension_password }),
+            ...(pbx_id && { pbx_id }),
+            ...(role && { role })
         },
         select: {
             id: true,
-            password: true,
+            email: true,
+            extension_number: true,
+            extension_password: true,
             role: true,
-            username: true,
             pbx: true
         }
     });

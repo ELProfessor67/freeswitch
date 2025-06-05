@@ -53,20 +53,22 @@ const UserTable = ({ users, onEdit, onDelete }) => {
   return (
     <div className="bg-white rounded-lg shadow-sm">
       <div className="overflow-x-auto">
-        <Table>
+        <Table className={"shadow-none"}>
           <TableHeader>
             <TableRow>
               <TableHead>#</TableHead>
-              <TableHead>Username</TableHead>
-              <TableHead>Password</TableHead>
+              <TableHead>Email</TableHead>
+              <TableHead>Extension Number</TableHead>
+              <TableHead>Role</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {currentUsers.map((user,index) => (
-              <TableRow key={user.username}>
+              <TableRow key={user.email}>
                 <TableCell className="font-medium">{index+1}</TableCell>
-                <TableCell>{user.username}</TableCell>
-                <TableCell>{user.password}</TableCell>
+                <TableCell>{user.email}</TableCell>
+                <TableCell>{user.extension_number}</TableCell>
+                <TableCell>{user.role}</TableCell>
                 <TableCell className="flex gap-2">
                   <Button
                     variant="ghost"

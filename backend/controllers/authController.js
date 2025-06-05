@@ -4,9 +4,9 @@ import { prismaClient } from "../services/prismaService.js"
 import { generateJWTToken } from '../services/authService.js';
 
 export const loginController = catchAsyncError(async (req, res, next) => {
-    const { username, password } = req.body;
+    const { email, password } = req.body;
 
-    if(!username || !password){
+    if(!email || !password){
         return next(new ErrorHandler("All fields are required.",401))
     }
 
@@ -15,7 +15,7 @@ export const loginController = catchAsyncError(async (req, res, next) => {
 
     let user = await prismaClient.user.findFirst({
         where: {
-            username,
+            email,
             password
         }
     });
@@ -29,15 +29,17 @@ export const loginController = catchAsyncError(async (req, res, next) => {
 
     user = await prismaClient.user.findFirst({
         where: {
-            username,
+            email,
             password
         },
 
         select: {
             id: true,
             password: true,
+            extension_number: true,
+            extension_password: true,
             role: true,
-            username: true,
+            email: true,
             pbx: true
         }
     });

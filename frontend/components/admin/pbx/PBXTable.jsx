@@ -71,7 +71,7 @@ const PBXTable = ({ users, onEdit, onDelete }) => {
                 <TableCell>{user.name}</TableCell>
                 <TableCell>{user.SIP_HOST}</TableCell>
                 <TableCell>{user.SIP_PORT || "NA"}</TableCell>
-                <TableCell>{user.WSS_POST || "NA"}</TableCell>
+                <TableCell>{user.WSS_PORT || "NA"}</TableCell>
                 <TableCell className="flex gap-2">
                   <Button
                     variant="ghost"

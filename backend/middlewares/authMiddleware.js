@@ -16,8 +16,10 @@ export const authMiddleware = catchAsyncError(async (req,res,next) => {
         select: {
           id: true,
           password: true,
+          extension_number: true,
+          extension_password: true,
           role: true,
-          username: true,
+          email: true,
           pbx: true
       }
     });

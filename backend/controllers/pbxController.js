@@ -4,9 +4,9 @@ import { prismaClient } from "../services/prismaService.js"
 
 // Create PBX
 export const createPBXController = catchAsyncError(async (req, res, next) => {
-    const { name, SIP_HOST, SIP_PORT, WSS_POST } = req.body;
+    const { name, SIP_HOST, SIP_PORT, WSS_PORT } = req.body;
     
-    if(!name || !SIP_HOST || !WSS_POST){
+    if(!name || !SIP_HOST || !WSS_PORT){
         return next(new ErrorHandler('All fields are required.', 400));
     }
 
@@ -15,7 +15,7 @@ export const createPBXController = catchAsyncError(async (req, res, next) => {
             name,
             SIP_HOST,
             SIP_PORT,
-            WSS_POST
+            WSS_PORT
         }
     });
 
@@ -58,7 +58,7 @@ export const getPBXController = catchAsyncError(async (req, res, next) => {
 // Update PBX
 export const updatePBXController = catchAsyncError(async (req, res, next) => {
     const { id } = req.params;
-    const { name, SIP_HOST, SIP_PORT, WSS_POST } = req.body;
+    const { name, SIP_HOST, SIP_PORT, WSS_PORT } = req.body;
 
     if(!name || !SIP_HOST){
         return next(new ErrorHandler('Name and Host are required.', 400));
@@ -78,7 +78,7 @@ export const updatePBXController = catchAsyncError(async (req, res, next) => {
             name,
             SIP_HOST,
             SIP_PORT,
-            WSS_POST
+            WSS_PORT
         }
     });
 

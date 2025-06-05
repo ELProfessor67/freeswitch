@@ -16,16 +16,17 @@ import {
 const PBXForm = ({ pbx, open, onOpenChange, onSubmit }) => {
   const { toast } = useToast();
   const [name, setName] = useState(pbx?.name || '');
-  const [host, setHost] = useState(pbx?.host || '');
-  const [sipPort, setSipPort] = useState(pbx?.sipPort?.toString() || '');
-  const [wssPort, setWssPort] = useState(pbx?.wssPort?.toString() || '');
+  const [host, setHost] = useState(pbx?.SIP_HOST || '');
+  const [sipPort, setSipPort] = useState(pbx?.SIP_PORT?.toString() || '');
+  const [wssPort, setWssPort] = useState(pbx?.WSS_PORT?.toString() || '');
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (pbx) {
       setName(pbx.name);
       setHost(pbx.SIP_HOST);
       setSipPort(pbx.SIP_PORT?.toString() || '');
-      setWssPort(pbx.WSS_POST?.toString() || '');
+      setWssPort(pbx.WSS_PORT?.toString() || '');
     } else {
       setName('');
       setHost('');
@@ -39,7 +40,7 @@ const PBXForm = ({ pbx, open, onOpenChange, onSubmit }) => {
     return !isNaN(numPort) && numPort > 0 && numPort <= 65535;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (!name.trim() || !host.trim()) {
@@ -47,24 +48,26 @@ const PBXForm = ({ pbx, open, onOpenChange, onSubmit }) => {
       return;
     }
 
+    setLoading(true);
     const pbxData = {
       name,
       SIP_HOST: host,
       SIP_PORT: sipPort,
-      WSS_POST: wssPort,
+      WSS_PORT: wssPort,
       update: !!pbx,
       id: pbx?.id
     };
 
-    onSubmit(pbxData);
+
+    await onSubmit(pbxData);
     onOpenChange(false);
 
-    toast(pbx ? "PBX Server Updated" : "PBX Server Created");
+    setLoading(false)
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px] bg-white">
+      <DialogContent className="sm:max-w-[500px] bg-white border-none shadow-md">
         <DialogHeader>
           <DialogTitle>{pbx ? 'Edit PBX Server' : 'Create New PBX Server'}</DialogTitle>
           <DialogDescription>
@@ -108,7 +111,7 @@ const PBXForm = ({ pbx, open, onOpenChange, onSubmit }) => {
                 min="1"
                 max="65535"
                 placeholder="Enter SIP Port"
-              
+
               />
             </div>
 
@@ -122,7 +125,7 @@ const PBXForm = ({ pbx, open, onOpenChange, onSubmit }) => {
                 min="1"
                 max="65535"
                 placeholder="Enter WSS Port"
-                
+
               />
             </div>
           </div>
@@ -131,9 +134,17 @@ const PBXForm = ({ pbx, open, onOpenChange, onSubmit }) => {
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
-            <Button type="submit">
-              {pbx ? 'Update PBX Server' : 'Create PBX Server'}
-            </Button>
+            {
+              loading ?
+                <Button type="button">
+                  Loading...
+                </Button>
+                :
+                <Button type="submit">
+                  {pbx ? 'Update PBX Server' : 'Create PBX Server'}
+                </Button>
+            }
+
           </DialogFooter>
         </form>
       </DialogContent>

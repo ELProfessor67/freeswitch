@@ -4,11 +4,11 @@ import { useUser } from '@/providers/UserProvider';
 import { registerRequest } from '@/services/SIPService';
 import { useRouter } from 'next/navigation';
 import React, { useState } from 'react';
-import {  toast } from 'react-toastify';
+import { toast } from 'react-toastify';
 
 const Page = () => {
-  const [loading,setLoading] = useState(false);
-  const {user,isAuth,setIsAuth,setUser} = useUser();
+  const [loading, setLoading] = useState(false);
+  const { user, isAuth, setIsAuth, setUser } = useUser();
   const router = useRouter();
 
 
@@ -18,19 +18,21 @@ const Page = () => {
     try {
       const formdata = new FormData(e.target);
 
-      const username = formdata.get("username");
-      const password = formdata.get("password");
       
-      
+
+
       const res = await loginRequest(formdata);
       setIsAuth(true);
       setUser(res.data.user);
-      const SIP = `sip:${username}@${res.data?.user?.pbx?.SIP_HOST}` + (res.data?.user?.pbx?.SIP_PORT ? res.data?.user?.pbx?.SIP_PORT : "");
-      const wss = `wss://${res.data?.user?.pbx?.SIP_HOST}:${res.data?.user?.pbx?.WSS_POST}`;
-      await registerRequest(SIP,username,password,wss);
-      if(res.data.user?.role == "ADMIN"){
+      const {extension_number,extension_password,pbx} = res.data.user;
+      const username = extension_number;
+      const password = extension_password;
+      const SIP = `sip:${username}@${pbx?.SIP_HOST}` + (pbx?.SIP_PORT ? pbx?.SIP_PORT : "");
+      const wss = `wss://${pbx?.SIP_HOST}:${pbx?.WSS_PORT || ""}`;
+      await registerRequest(SIP, username, password, wss);
+      if (user?.role == "ADMIN") {
         router.push("/admin");
-      }else{
+      } else {
         router.push("/dashboard");
       }
 
@@ -38,7 +40,7 @@ const Page = () => {
     } catch (error) {
       toast.error("Login UnSuccessfully")
       console.error(error);
-    }finally{
+    } finally {
       setLoading(false);
     }
   };
@@ -46,39 +48,40 @@ const Page = () => {
   return (
 
     <div className="flex items-center justify-center min-h-screen bg-gray-100">
-      <form 
+      <form
         onSubmit={handleSubmit}
         className="bg-white p-8 rounded-lg shadow-md w-full max-w-md"
       >
         <h2 className="text-2xl font-semibold mb-6 text-center">PBX Login</h2>
 
-        <input
-          name="username"
-          required
-          placeholder="Username"
-          className="w-full p-3 mb-4 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-400"
-        />
+        <div className='space-y-2'>
+          <label htmlFor='email'>Email</label>
+          <input
+            name="email"
+            id='email'
+            required
+            placeholder="Username"
+            className="w-full p-3 mb-4 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-400"
+          />
+        </div>
 
-        <input
-          name="password"
-          type="password"
-          required
-          placeholder="Password"
-          className="w-full p-3 mb-4 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-400"
-        />
-
-        {/* <input
-          name="SIP"
-          required
-          placeholder="SIP"
-          className="w-full p-3 mb-6 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-400"
-        /> */}
+        <div className='space-y-2'>
+          <label htmlFor='password'>Password</label>
+          <input
+            id='password'
+            name="password"
+            type="password"
+            required
+            placeholder="Password"
+            className="w-full p-3 mb-4 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-400"
+          />
+        </div>
 
         <button
           type="submit"
           className="w-full bg-orange-500 text-white py-3 rounded hover:bg-orange-600 transition-colors"
         >
-          {loading ? "Loading....": "Submit"}
+          {loading ? "Loading...." : "Submit"}
         </button>
       </form>
     </div>

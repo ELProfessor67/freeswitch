@@ -81,7 +81,7 @@ const Page = () => {
 
         <button
           type="submit"
-          className="w-full bg-orange-500 text-white py-3 rounded hover:bg-orange-600 transition-colors"
+          className="w-full bg-blue-400 text-white py-3 rounded hover:bg-blue-600 transition-colors cursor-pointer"
         >
           {loading ? "Loading...." : "Submit"}
         </button>
